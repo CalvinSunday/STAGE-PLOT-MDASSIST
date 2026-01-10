@@ -26,6 +26,7 @@
       <span class="sp-sep"></span>
 
       <button id="sp-cableModeBtn" class="sp-btn" aria-pressed="false">Cable Tool: Off</button>
+      <button id="sp-cableFinishBtn" class="sp-btn" disabled>Finish Cable</button>
 
       <label class="sp-label">
         Cable
@@ -65,7 +66,7 @@
   <div class="sp-body">
     <aside class="sp-library">
       <div class="sp-libhead">
-        <button id="sp-libToggle" class="sp-btn sp-mini" aria-pressed="false">Hide</button>
+        <button id="sp-libToggle" class="sp-btn sp-mini" aria-pressed="false"><span class="sp-libToggleLabel">Hide</span> <span class="sp-chev">▾</span></button>
         <div class="sp-libtitle">Library</div>
         <input id="sp-search" class="sp-search" placeholder="Search…" />
       </div>
@@ -74,7 +75,7 @@
 
       <div class="sp-help">
         <div><b>Keys</b></div>
-        <div>• <b>C</b> toggle cable tool • <b>Enter</b> finish cable • <b>Esc</b> cancel cable • <b>Backspace</b> remove last cable point</div>
+        <div>• <b>C</b> toggle cable tool • Cable Tool On → click to place points → Double-click / Enter / Finish Cable to commit</div>
         <div>• <b>R</b> rotate clockwise • <b>Shift+R</b> counter-clockwise</div>
         <div>• <b>[</b>/<b>]</b> send back / bring forward • <b>Shift+[</b>/<b>Shift+]</b> to back / to front</div>
         <div>• <b>D</b> duplicate • <b>G</b> group • <b>Shift+G</b> ungroup</div>
@@ -82,6 +83,7 @@
         <div>• <b>Ctrl/Cmd+Z</b> undo • <b>Ctrl/Cmd+Shift+Z</b> redo</div>
         <div class="sp-muted" style="margin-top:6px;">Locked items are click-through; unlock them from the Layers panel.</div>
       </div>
+      <div id="sp-libResizer" class="sp-lib-resizer" title="Drag to resize library"></div>
     </aside>
 
     <main class="sp-main">
@@ -123,6 +125,7 @@
             <rect id="sp-bg" x="0" y="0" width="1200" height="700" fill="white"/>
             <rect id="sp-gridRect" x="0" y="0" width="1200" height="700" fill="url(#sp-grid)"/>
 
+            <g id="sp-guides" pointer-events="none"></g>
             <g id="sp-items"></g>
             <g id="sp-cableDraft"></g>
 
@@ -182,16 +185,21 @@
   }
   .sp-toolbar { display:flex; gap:12px; justify-content:space-between; align-items:center; padding:10px; border:1px solid #e5e7eb; background:#fafafa; border-radius:10px; }
   .sp-toolbarLeft, .sp-toolbarRight { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
-  .sp-body { margin-top:10px; display:grid; grid-template-columns: 320px minmax(0, 1fr); gap:10px;
+  .sp-body { margin-top:10px; display:grid; grid-template-columns: 1fr; grid-template-rows: 320px 1fr; gap:10px;
     flex:1 1 auto; min-height:0; }
 
-  .sp-library { border:1px solid #e5e7eb; border-radius:10px; background:#fff; overflow:hidden; display:flex; flex-direction:column; min-height:0; height:100%; min-width:0; }
+  .sp-library { border:1px solid #e5e7eb; border-radius:10px; background:#fff; overflow:hidden; display:flex; flex-direction:column; min-height:0; height:var(--sp-lib-height,320px); width:100%; transition: height .22s ease; }
 
   .sp-libhead { display:flex; gap:8px; align-items:center; padding:10px; border-bottom:1px solid #f0f0f0; background:#fafafa; }
+  .sp-libToggleLabel { margin-right:6px; }
+  .sp-chev { display:inline-block; transition: transform .2s ease; font-size:12px; }
   .sp-libtitle { font-weight:700; }
   .sp-search { flex:1; border:1px solid #e5e7eb; border-radius:8px; padding:8px 10px; }
   .sp-libgrid { padding:10px; display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:10px;
     flex:1 1 auto; min-height:0; overflow:auto; }
+
+  .sp-lib-resizer { height:8px; cursor:row-resize; background:transparent; }
+  .sp-lib-resizer:hover { background:linear-gradient(90deg, rgba(0,0,0,0.03), rgba(0,0,0,0.06)); }
 
   .sp-card { border:1px solid #e5e7eb; border-radius:10px; padding:8px; cursor:pointer; user-select:none; background:#fff; transition: transform .05s ease; }
   .sp-card:hover { transform: translateY(-1px); }
@@ -239,14 +247,15 @@
   .sp-groupRow { background:#fafafa; }
   .sp-childRow { background:#fff; margin-left:12px; }
 
-  /* Library collapse */
-  #stageplot-app.sp-lib-collapsed .sp-body { grid-template-columns: 56px 1fr; }
+  /* Library collapse (library becomes a small header row) */
+  #stageplot-app.sp-lib-collapsed .sp-body { grid-template-rows: 56px 1fr; }
   #stageplot-app.sp-lib-collapsed .sp-libtitle,
   #stageplot-app.sp-lib-collapsed .sp-search,
   #stageplot-app.sp-lib-collapsed .sp-libgrid,
   #stageplot-app.sp-lib-collapsed .sp-help { display:none; }
-  #stageplot-app.sp-lib-collapsed .sp-library { min-width:56px; }
+  #stageplot-app.sp-lib-collapsed .sp-library { min-height:56px; height:56px; }
   #stageplot-app.sp-lib-collapsed .sp-libhead { justify-content:center; }
+  #stageplot-app.sp-lib-collapsed #sp-libToggle .sp-chev { transform: rotate(180deg); }
 
   @media (max-width: 980px) {
     .sp-body { grid-template-columns: 1fr; }
@@ -271,6 +280,7 @@
   const els = {
     svg: document.getElementById("sp-svg"),
     items: document.getElementById("sp-items"),
+    guides: document.getElementById("sp-guides"),
     verts: document.getElementById("sp-verts"),
     cableDraft: document.getElementById("sp-cableDraft"),
     gridRect: document.getElementById("sp-gridRect"),
@@ -304,12 +314,21 @@
     addTextBtn: document.getElementById("sp-addTextBtn"),
     addImageInput: document.getElementById("sp-addImageInput"),
     cableModeBtn: document.getElementById("sp-cableModeBtn"),
+    cableFinishBtn: document.getElementById("sp-cableFinishBtn"),
     cableColor: document.getElementById("sp-cableColor"),
     cableWidth: document.getElementById("sp-cableWidth"),
     layerList: document.getElementById("sp-layerList"),
     zoomIn: document.getElementById("sp-zoomIn"),
     zoomOut: document.getElementById("sp-zoomOut"),
     units: document.getElementById("sp-units"),
+    qaScaleDown: document.getElementById("sp-qaScaleDown"),
+    qaScaleUp: document.getElementById("sp-qaScaleUp"),
+    qaFontDown: document.getElementById("sp-qaFontDown"),
+    qaFontUp: document.getElementById("sp-qaFontUp"),
+    qaWDown: document.getElementById("sp-qaWDown"),
+    qaWUp: document.getElementById("sp-qaWUp"),
+    qaHDown: document.getElementById("sp-qaHDown"),
+    qaHUp: document.getElementById("sp-qaHUp"),
     undoBtn: document.getElementById("sp-undoBtn"),
     redoBtn: document.getElementById("sp-redoBtn"),
     libToggle: document.getElementById("sp-libToggle"),
@@ -473,11 +492,11 @@
   }
   function standBoomSvg(){
     return `<svg width="64" height="64" viewBox="0 0 70 70">
-      <rect x="33" y="14" width="4" height="41" rx="2" fill="rgba(0,0,0,0.82)"/>
-      <path d="M35 22 L56 14" stroke="rgba(0,0,0,0.82)" stroke-width="3" stroke-linecap="round"/>
-      <path d="M35 55 L20 65" stroke="rgba(0,0,0,0.82)" stroke-width="3"/>
-      <path d="M35 55 L50 65" stroke="rgba(0,0,0,0.82)" stroke-width="3"/>
-      <circle cx="56" cy="14" r="3.5" fill="rgba(0,0,0,0.82)"/>
+      <!-- simplified boom stand silhouette -->
+      <rect x="34" y="14" width="2.5" height="40" rx="1.2" fill="rgba(0,0,0,0.82)"/>
+      <rect x="18" y="54" width="34" height="4" rx="2" fill="rgba(0,0,0,0.82)"/>
+      <path d="M36.25 24 L56 16" stroke="rgba(0,0,0,0.82)" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="56" cy="16" r="3" fill="rgba(0,0,0,0.82)"/>
     </svg>`;
   }
   function standShortBoomSvg(){
@@ -588,119 +607,76 @@
 
   function acousticGtrSvg(){
     return `<svg width="64" height="64" viewBox="0 0 70 70">
+      <!-- acoustic guitar silhouette -->
       <path d="M35 24
                C29.5 24 25.5 27.6 25.5 33
-               C25.5 36.4 27.0 39.2 29.4 41.0
-               C25.2 43.0 23.2 46.8 23.8 51.0
-               C24.8 57.0 29.8 61.5 35 61.5
-               C40.2 61.5 45.2 57.0 46.2 51.0
-               C46.8 46.8 44.8 43.0 40.6 41.0
-               C43.0 39.2 44.5 36.4 44.5 33
+               C25.5 38 28.5 41 32 43
+               C29 45 26.5 48.5 26.5 52.5
+               C26.5 57.5 30.5 61.5 35 61.5
+               C39.5 61.5 43.5 57.5 43.5 52.5
+               C43.5 48.5 41 45 38 43
+               C41.5 41 44.5 38 44.5 33
                C44.5 27.6 40.5 24 35 24 Z"
             fill="rgba(0,0,0,0.82)"/>
-      <rect x="32" y="9" width="6" height="18" rx="3" fill="rgba(0,0,0,0.82)"/>
-      <path d="M28 4 H42
-               C44.2 4 46 5.8 46 8
-               V12
-               C46 14.2 44.2 16 42 16
-               H28 Z" fill="rgba(0,0,0,0.82)"/>
-      <circle cx="29.5" cy="7" r="1.25" fill="rgba(0,0,0,0.82)"/>
-      <circle cx="29.5" cy="12.5" r="1.25" fill="rgba(0,0,0,0.82)"/>
-      <circle cx="40.5" cy="7" r="1.25" fill="rgba(0,0,0,0.82)"/>
-      <circle cx="40.5" cy="12.5" r="1.25" fill="rgba(0,0,0,0.82)"/>
+      <rect x="31" y="8" width="8" height="20" rx="3" fill="rgba(0,0,0,0.82)"/>
       <circle cx="35" cy="38.5" r="5.4" fill="rgba(255,255,255,0.95)"/>
-      <rect x="28" y="52" width="14" height="4.6" rx="2.3" fill="rgba(255,255,255,0.95)"/>
     </svg>`;
   }
 
   function electricGtrSvg(){
     return `<svg width="64" height="64" viewBox="0 0 70 70">
-      <!-- body -->
-      <path d="M29 30
-               C24.5 30 21.5 33.6 21.5 37.5
-               C21.5 40.8 23.8 43.6 26.8 44.6
-               C24.8 47.2 25.0 50.8 27.2 53.2
-               C29.6 55.8 33 57.2 35 57.2
-               C37 57.2 40.4 55.8 42.8 53.2
-               C45.0 50.8 45.2 47.2 43.2 44.6
-               C46.2 43.6 48.5 40.8 48.5 37.5
-               C48.5 33.6 45.5 30 41 30
-               C39.5 24.5 30.5 24.5 29 30 Z"
+      <!-- electric guitar silhouette -->
+      <path d="M26 36
+               C24 34 22 31 24 28
+               C26 24 32 22 36 24
+               C40 26 44 28 48 28
+               C52 28 56 32 54 36
+               C52 40 48 44 44 46
+               C40 48 36 50 32 50
+               C28 50 26 46 26 36 Z"
             fill="rgba(0,0,0,0.82)"/>
-      <!-- neck -->
-      <rect x="32" y="8" width="6" height="23" rx="3" fill="rgba(0,0,0,0.82)"/>
-      <!-- headstock -->
-      <path d="M31 4 H44
-               C46 4 47.5 5.5 47.5 7.5
-               V14
-               C47.5 16 46 17.5 44 17.5
-               H31 Z" fill="rgba(0,0,0,0.82)"/>
-      <circle cx="46.2" cy="6.7" r="1.2" fill="rgba(0,0,0,0.82)"/>
-      <circle cx="46.2" cy="9.1" r="1.2" fill="rgba(0,0,0,0.82)"/>
-      <circle cx="46.2" cy="11.5" r="1.2" fill="rgba(0,0,0,0.82)"/>
-      <circle cx="46.2" cy="13.9" r="1.2" fill="rgba(0,0,0,0.82)"/>
-      <!-- pickguard hint -->
-      <path d="M28 41 C32 38 38 38 42 41 C39 46 31 46 28 41 Z"
-            fill="rgba(255,255,255,0.15)"/>
+      <rect x="30" y="6" width="6" height="28" rx="3" fill="rgba(0,0,0,0.82)"/>
+      <rect x="30" y="4" width="14" height="6" rx="2" fill="rgba(0,0,0,0.82)"/>
     </svg>`;
   }
 
   function bassGtrSvg(){
     return `<svg width="64" height="64" viewBox="0 0 70 70">
-      <!-- body -->
-      <path d="M28.5 31
-               C23.5 31 20.5 34.8 20.5 39
-               C20.5 42.4 22.7 45.2 25.8 46.4
-               C24.0 49.2 24.2 53.0 26.6 55.6
-               C29.4 58.6 33.3 60.0 35 60.0
-               C36.7 60.0 40.6 58.6 43.4 55.6
-               C45.8 53.0 46.0 49.2 44.2 46.4
-               C47.3 45.2 49.5 42.4 49.5 39
-               C49.5 34.8 46.5 31 41.5 31
-               C40.0 24.5 30.0 24.5 28.5 31 Z"
+      <!-- bass guitar silhouette (longer neck) -->
+      <path d="M27 36
+               C25 34 23 31 24.5 28
+               C26.5 24 32 22 36 24
+               C40 26 44 28 48 28
+               C52 28 56 32 55 36
+               C54 40 50 44 46 46
+               C42 48 38 50 33 50
+               C29.5 50 27.5 47 27 36 Z"
             fill="rgba(0,0,0,0.82)"/>
-      <!-- longer neck -->
-      <rect x="32" y="5" width="6" height="28" rx="3" fill="rgba(0,0,0,0.82)"/>
-      <!-- longer headstock -->
-      <path d="M31 1 H46
-               C48.2 1 50 2.8 50 5
-               V13.5
-               C50 15.7 48.2 17.5 46 17.5
-               H31 Z" fill="rgba(0,0,0,0.82)"/>
-      <!-- 4 tuners -->
-      <circle cx="48.6" cy="4.3" r="1.2" fill="rgba(0,0,0,0.82)"/>
-      <circle cx="48.6" cy="6.9" r="1.2" fill="rgba(0,0,0,0.82)"/>
-      <circle cx="48.6" cy="9.5" r="1.2" fill="rgba(0,0,0,0.82)"/>
-      <circle cx="48.6" cy="12.1" r="1.2" fill="rgba(0,0,0,0.82)"/>
-      <path d="M28.5 44 C32 41 38 41 41.5 44 C39.5 48 30.5 48 28.5 44 Z"
-            fill="rgba(255,255,255,0.12)"/>
+      <rect x="28" y="2" width="6" height="34" rx="3" fill="rgba(0,0,0,0.82)"/>
+      <g>
+        <circle cx="36" cy="4" r="1.2" fill="rgba(0,0,0,0.82)"/>
+        <circle cx="36" cy="8" r="1.2" fill="rgba(0,0,0,0.82)"/>
+        <circle cx="36" cy="12" r="1.2" fill="rgba(0,0,0,0.82)"/>
+        <circle cx="36" cy="16" r="1.2" fill="rgba(0,0,0,0.82)"/>
+      </g>
     </svg>`;
   }
 
   function violinSvg(){
     return `<svg width="64" height="64" viewBox="0 0 70 70">
-      <!-- body -->
+      <!-- violin silhouette -->
       <path d="M35 22
-               C31.2 22 28.6 24.8 28.6 28.2
-               C28.6 30.2 29.5 32.0 31.0 33.2
-               C28.8 34.6 27.4 36.8 27.6 39.6
-               C27.9 44.8 31.2 48.0 35 48.0
-               C38.8 48.0 42.1 44.8 42.4 39.6
-               C42.6 36.8 41.2 34.6 39.0 33.2
-               C40.5 32.0 41.4 30.2 41.4 28.2
-               C41.4 24.8 38.8 22 35 22 Z"
+               C31.5 22 29 24.5 29 28
+               C29 30 30 31.8 31.5 33
+               C29.8 34.2 28.5 36 28.8 38
+               C29.5 42 32.5 45 35 45
+               C37.5 45 40.5 42 41.2 38
+               C41.5 36 40.2 34.2 38.5 33
+               C40 31.8 41 30 41 28
+               C41 24.5 38.5 22 35 22 Z"
             fill="rgba(0,0,0,0.82)"/>
-      <!-- neck -->
-      <rect x="33" y="12" width="4" height="12" rx="2" fill="rgba(0,0,0,0.82)"/>
-      <!-- scroll -->
-      <path d="M31 6 H39 C41 6 42.5 7.5 42.5 9.5
-               V12.5 C42.5 14.5 41 16 39 16 H31 Z"
-            fill="rgba(0,0,0,0.82)"/>
-      <circle cx="40.8" cy="8.8" r="1.0" fill="rgba(0,0,0,0.82)"/>
-      <circle cx="40.8" cy="11.6" r="1.0" fill="rgba(0,0,0,0.82)"/>
-      <!-- f-holes hints -->
-      <rect x="31.2" y="33.5" width="2.0" height="10.5" rx="1.0" fill="rgba(255,255,255,0.22)"/>
-      <rect x="36.8" y="33.5" width="2.0" height="10.5" rx="1.0" fill="rgba(255,255,255,0.22)"/>
+      <rect x="33" y="10" width="4" height="12" rx="2" fill="rgba(0,0,0,0.82)"/>
+      <path d="M31 6 H39 C41 6 42 7.5 42 9.5 V12.5 C42 14.5 41 15.5 39 15.5 H31 Z" fill="rgba(0,0,0,0.82)"/>
     </svg>`;
   }
 
@@ -1032,6 +1008,11 @@
           <div class="sp-thumb">${lib.svg}</div>
           <div class="sp-name">${escapeHtml(lib.name)}</div>
         `;
+        card.setAttribute("draggable", "true");
+        card.addEventListener("dragstart", (e) => {
+          e.dataTransfer.setData("application/x-stageplot-icon", lib.id);
+          e.dataTransfer.effectAllowed = "copy";
+        });
         card.addEventListener("click", () => { addFromLibrary(lib); root.focus(); });
         els.libgrid.appendChild(card);
       });
@@ -1231,6 +1212,49 @@
     draw();
   }
 
+  function addIconItemAt(icon, x, y) {
+    const id = uid();
+    items.push(normalizeItem({
+      id,
+      kind: "icon",
+      iconId: icon.id,
+      name: icon.name,
+      x: clampf(x, 0, stage.w), y: clampf(y, 0, stage.h),
+      r: 0,
+      s: icon.defS ?? 1,
+      label: "",
+      labelSize: 14,
+      labelColor: "#111111",
+      locked: false,
+      bw: icon.bw ?? 90,
+      bh: icon.bh ?? 90,
+    }));
+    pushHistory("add icon");
+    draw();
+    selectOnly([id]);
+  }
+
+  function addImageItemAt(dataUrl, fileName, x, y) {
+    const id = uid();
+    items.push(normalizeItem({
+      id,
+      kind: "image",
+      name: fileName || "Image",
+      x: clampf(x, 0, stage.w), y: clampf(y, 0, stage.h),
+      r: 0, s: 1,
+      href: dataUrl,
+      iw: 220, ih: 220,
+      locked: false,
+      bw: 260, bh: 260,
+      label: "",
+      labelSize: 14,
+      labelColor: "#111111",
+    }));
+    pushHistory("add image");
+    draw();
+    selectOnly([id]);
+  }
+
   function addCableFromDraft() {
     if (!cableTool.draft || cableTool.draft.points.length < 2) return;
     const id = uid();
@@ -1261,6 +1285,12 @@
   function getSelectedItems() {
     const ids = selected;
     return items.filter(x => ids.has(x.id));
+  }
+
+  function getSelected() {
+    const ids = getSelectedIds();
+    if (ids.length !== 1) return null;
+    return getItemById(ids[0]);
   }
 
   function getItemById(id) { return items.find(x => x.id === id) || null; }
@@ -1396,6 +1426,8 @@
     renderLayers();
     updateStatus();
     applyZoom();
+
+    drawMidpointGuides();
 
     // pointer-events behavior
     // - locked items are not clickable (pass-through)
@@ -1727,13 +1759,29 @@
     const it = selectedItems[0];
     if (!it) return;
 
+    const quickAdjustHtml = `
+      <div class="sp-row" id="sp-quickAdjust">
+        <button id="sp-qaScaleDown" class="sp-btn sp-mini">Scale −</button>
+        <button id="sp-qaScaleUp" class="sp-btn sp-mini">Scale +</button>
+
+        <button id="sp-qaFontDown" class="sp-btn sp-mini">Font −</button>
+        <button id="sp-qaFontUp" class="sp-btn sp-mini">Font +</button>
+
+        <button id="sp-qaWDown" class="sp-btn sp-mini">W −</button>
+        <button id="sp-qaWUp" class="sp-btn sp-mini">W +</button>
+
+        <button id="sp-qaHDown" class="sp-btn sp-mini">H −</button>
+        <button id="sp-qaHUp" class="sp-btn sp-mini">H +</button>
+      </div>
+    `;
+
     if (els.lockBtn) {
       els.lockBtn.setAttribute("aria-pressed", it.locked ? "true" : "false");
       els.lockBtn.textContent = it.locked ? "Unlock" : "Lock";
     }
 
     if (it.kind === "icon") {
-      els.inspectorFields.innerHTML = `
+      els.inspectorFields.innerHTML = `${quickAdjustHtml}
         <div class="sp-field">
           <div>Label</div>
           <div class="sp-inline">
@@ -1759,12 +1807,13 @@
       hookLabelFields(it);
       const color = document.getElementById("sp-f-color");
       color.addEventListener("input", (e) => { it.color = e.target.value; draw(); debounceHistory("icon color"); });
+      attachQuickAdjust();
       return;
     }
 
     if (it.kind === "shape") {
       const fillOn = (it.fill && it.fill !== "none");
-      els.inspectorFields.innerHTML = `
+      els.inspectorFields.innerHTML = `${quickAdjustHtml}
         <div class="sp-field">
           <div>Label</div>
           <div class="sp-inline">
@@ -1833,11 +1882,12 @@
 
       document.getElementById("sp-f-w").addEventListener("input", (e) => { it.w = clampf(parseFloat(e.target.value||"200"), 20, 4000); draw(); debounceHistory("shape size"); });
       document.getElementById("sp-f-h").addEventListener("input", (e) => { it.h = clampf(parseFloat(e.target.value||"200"), 20, 4000); draw(); debounceHistory("shape size"); });
+      attachQuickAdjust();
       return;
     }
 
     if (it.kind === "text") {
-      els.inspectorFields.innerHTML = `
+      els.inspectorFields.innerHTML = `${quickAdjustHtml}
         <div class="sp-field">
           <div>Text</div>
           <textarea id="sp-f-text">${escapeHtml(it.text || "")}</textarea>
@@ -1862,11 +1912,12 @@
       document.getElementById("sp-f-font").addEventListener("input", (e) => { it.fontSize = clampf(parseFloat(e.target.value||"24"), 8, 200); draw(); debounceHistory("text size"); });
       document.getElementById("sp-f-color").addEventListener("input", (e) => { it.color = e.target.value; draw(); debounceHistory("text color"); });
       hookCommonTransforms(it);
+      attachQuickAdjust();
       return;
     }
 
     if (it.kind === "image") {
-      els.inspectorFields.innerHTML = `
+      els.inspectorFields.innerHTML = `${quickAdjustHtml}
         <div class="sp-field">
           <div>Image</div>
           <div class="sp-muted">${escapeHtml(it.name || "Image")}</div>
@@ -1901,6 +1952,7 @@
 
       document.getElementById("sp-f-iw").addEventListener("input", (e) => { it.iw = clampf(parseFloat(e.target.value||"220"), 30, 4000); draw(); debounceHistory("image size"); });
       document.getElementById("sp-f-ih").addEventListener("input", (e) => { it.ih = clampf(parseFloat(e.target.value||"220"), 30, 4000); draw(); debounceHistory("image size"); });
+      attachQuickAdjust();
       return;
     }
 
@@ -1916,8 +1968,40 @@
       `;
       document.getElementById("sp-f-ccolor").addEventListener("input", (e) => { it.color = e.target.value; draw(); debounceHistory("cable color"); });
       document.getElementById("sp-f-cwidth").addEventListener("input", (e) => { it.width = clampf(parseFloat(e.target.value||"3"), 1, 20); draw(); debounceHistory("cable width"); });
+      // quick-adjust buttons state
+      const _it = getSelected();
+      const hasSel = !!_it;
+      const canScale = hasSel && _it.kind !== "cable";
+      const canFont = hasSel && _it.kind === "text";
+      const canWH = hasSel && (_it.kind === "image" || _it.kind === "shape");
+
+      if (els.qaScaleDown) els.qaScaleDown.disabled = !canScale;
+      if (els.qaScaleUp) els.qaScaleUp.disabled = !canScale;
+      if (els.qaFontDown) els.qaFontDown.disabled = !canFont;
+      if (els.qaFontUp) els.qaFontUp.disabled = !canFont;
+      if (els.qaWDown) els.qaWDown.disabled = !canWH;
+      if (els.qaWUp) els.qaWUp.disabled = !canWH;
+      if (els.qaHDown) els.qaHDown.disabled = !canWH;
+      if (els.qaHUp) els.qaHUp.disabled = !canWH;
+
       return;
     }
+
+    // quick-adjust buttons state for non-cable selections
+    const _it2 = getSelected();
+    const _hasSel = !!_it2;
+    const _canScale = _hasSel && _it2.kind !== "cable";
+    const _canFont = _hasSel && _it2.kind === "text";
+    const _canWH = _hasSel && (_it2.kind === "image" || _it2.kind === "shape");
+
+    if (els.qaScaleDown) els.qaScaleDown.disabled = !_canScale;
+    if (els.qaScaleUp) els.qaScaleUp.disabled = !_canScale;
+    if (els.qaFontDown) els.qaFontDown.disabled = !_canFont;
+    if (els.qaFontUp) els.qaFontUp.disabled = !_canFont;
+    if (els.qaWDown) els.qaWDown.disabled = !_canWH;
+    if (els.qaWUp) els.qaWUp.disabled = !_canWH;
+    if (els.qaHDown) els.qaHDown.disabled = !_canWH;
+    if (els.qaHUp) els.qaHUp.disabled = !_canWH;
   }
 
   function hookCommonTransforms(it) {
@@ -2234,6 +2318,7 @@
         stroke-dasharray="6 6" opacity="0.85"/>
     `;
     els.cableDraft.appendChild(g);
+    if (els.cableFinishBtn) els.cableFinishBtn.disabled = !(cableTool.on && cableTool.draft && cableTool.draft.points.length >= 2);
   }
 
   function addCablePointFromEvent(e) {
@@ -2294,10 +2379,29 @@
 
   // When not in cable tool, clicking blank stage clears selection
   function onStagePointerDown(e) {
-    if (cableTool.on) return; // captured already
+    root.focus();
+
+    // Cable tool: always place points, regardless of what's under the cursor
+    if (cableTool.on) {
+      e.preventDefault();
+      const p = svgPointFromEvent(e);
+      const pt = snapPoint(p);
+
+      if (!cableTool.draft) {
+        cableTool.draft = {
+          points: [pt],
+          color: els.cableColor.value,
+          width: clampf(parseInt(els.cableWidth.value || "3", 10), 1, 12),
+        };
+      } else {
+        cableTool.draft.points.push(pt);
+      }
+      draw();
+      return;
+    }
+
     const isBlank = (e.target === els.svg || e.target.id === "sp-bg" || e.target.id === "sp-gridRect");
     if (!isBlank) return;
-    root.focus();
     clearSelection();
   }
 
@@ -2756,6 +2860,53 @@
   els.svg.addEventListener("pointerup", onPointerUp);
   els.svg.addEventListener("pointercancel", onPointerUp);
   els.svg.addEventListener("pointerdown", onStagePointerDown);
+  els.svg.addEventListener("dblclick", (e) => {
+    if (!cableTool.on || !cableTool.draft) return;
+
+    // Dedupe last point if double-click added a duplicate snapped point
+    const pts = cableTool.draft.points;
+    if (pts.length >= 2) {
+      const a = pts[pts.length - 1];
+      const b = pts[pts.length - 2];
+      if (a.x === b.x && a.y === b.y) pts.pop();
+    }
+
+    finishCableDraft();
+    e.preventDefault();
+  });
+
+  // Drag & drop from library / external files
+  els.svg.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+  });
+
+  els.svg.addEventListener("drop", (e) => {
+    e.preventDefault();
+    root.focus();
+
+    const p = svgPointFromClient(e.clientX, e.clientY);
+
+    // 1) If dropping an image file, add as image at drop point
+    const files = e.dataTransfer.files;
+    if (files && files.length) {
+      const f = files[0];
+      if (f.type && f.type.startsWith("image/")) {
+        const reader = new FileReader();
+        reader.onload = () => addImageItemAt(reader.result, f.name, p.x, p.y);
+        reader.readAsDataURL(f);
+        return;
+      }
+    }
+
+    // 2) Otherwise, treat as icon drop
+    const iconId =
+      e.dataTransfer.getData("application/x-stageplot-icon") ||
+      e.dataTransfer.getData("text/plain");
+
+    const icon = LIB_ITEMS.find(x => x.id === iconId);
+    if (icon) addIconItemAt(icon, p.x, p.y);
+  });
 
   if (els.gridBtn) {
     els.gridBtn.addEventListener("click", () => {
@@ -2794,6 +2945,7 @@
   });
 
   if (els.cableModeBtn) els.cableModeBtn.addEventListener("click", () => toggleCableTool(!cableTool.on));
+  if (els.cableFinishBtn) els.cableFinishBtn.addEventListener("click", () => { finishCableDraft(); root.focus(); });
 
   if (els.clearSel) els.clearSel.addEventListener("click", clearSelection);
   if (els.deleteBtn) els.deleteBtn.addEventListener("click", deleteSelected);
@@ -2812,6 +2964,70 @@
   if (els.zoomIn) els.zoomIn.addEventListener("click", () => { stage.zoom = clampf(stage.zoom + 0.1, 0.6, 2.0); pushHistory("zoom"); applyZoom(); });
   if (els.zoomOut) els.zoomOut.addEventListener("click", () => { stage.zoom = clampf(stage.zoom - 0.1, 0.6, 2.0); pushHistory("zoom"); applyZoom(); });
 
+  // Quick-adjust nudge helpers (scale / font / W/H)
+  function nudgeScale(mult) {
+    const ids = getSelectedIds(); if (ids.length !== 1) return;
+    const it = getItemById(ids[0]); if (!it || it.locked) return;
+    if (it.kind === "cable") return;
+    it.s = clampf((it.s || 1) * mult, 0.2, 8);
+    draw();
+    pushHistory("nudge scale");
+  }
+
+  function nudgeFont(delta) {
+    const ids = getSelectedIds(); if (ids.length !== 1) return;
+    const it = getItemById(ids[0]); if (!it || it.locked) return;
+    if (it.kind !== "text") return;
+    it.fontSize = clampf((it.fontSize || 24) + delta, 8, 160);
+    draw();
+    pushHistory("nudge font");
+  }
+
+  function nudgeWH(deltaW, deltaH) {
+    const ids = getSelectedIds(); if (ids.length !== 1) return;
+    const it = getItemById(ids[0]); if (!it || it.locked) return;
+
+    if (it.kind === "image") {
+      it.iw = clampf((it.iw || 220) + deltaW, 30, 4000);
+      it.ih = clampf((it.ih || 220) + deltaH, 30, 4000);
+      it.bw = (it.iw || 220) + 40;
+      it.bh = (it.ih || 220) + 40;
+      draw();
+      pushHistory("nudge image size");
+      return;
+    }
+
+    if (it.kind === "shape") {
+      it.w = clampf((it.w || 120) + deltaW, 10, 4000);
+      it.h = clampf((it.h || 120) + deltaH, 10, 4000);
+      it.bw = (it.w || 120) + 40;
+      it.bh = (it.h || 120) + 40;
+      draw();
+      pushHistory("nudge shape size");
+      return;
+    }
+  }
+
+  function attachQuickAdjust() {
+    const sDown = document.getElementById("sp-qaScaleDown");
+    const sUp = document.getElementById("sp-qaScaleUp");
+    const fDown = document.getElementById("sp-qaFontDown");
+    const fUp = document.getElementById("sp-qaFontUp");
+    const wDown = document.getElementById("sp-qaWDown");
+    const wUp = document.getElementById("sp-qaWUp");
+    const hDown = document.getElementById("sp-qaHDown");
+    const hUp = document.getElementById("sp-qaHUp");
+
+    if (sDown) sDown.addEventListener("click", () => nudgeScale(1 / 1.05));
+    if (sUp) sUp.addEventListener("click", () => nudgeScale(1.05));
+    if (fDown) fDown.addEventListener("click", () => nudgeFont(-2));
+    if (fUp) fUp.addEventListener("click", () => nudgeFont(+2));
+    if (wDown) wDown.addEventListener("click", () => nudgeWH(-10, 0));
+    if (wUp) wUp.addEventListener("click", () => nudgeWH(+10, 0));
+    if (hDown) hDown.addEventListener("click", () => nudgeWH(0, -10));
+    if (hUp) hUp.addEventListener("click", () => nudgeWH(0, +10));
+  }
+
   if (els.units) {
     els.units.addEventListener("change", () => {
       // keep stage px size the same; only update displayed units and grid
@@ -2827,7 +3043,50 @@
     els.libToggle.addEventListener("click", () => {
       const collapsed = root.classList.toggle("sp-lib-collapsed");
       els.libToggle.setAttribute("aria-pressed", collapsed ? "true" : "false");
-      els.libToggle.textContent = collapsed ? "Show" : "Hide";
+      const lbl = els.libToggle.querySelector('.sp-libToggleLabel');
+      if (lbl) lbl.textContent = collapsed ? "Show" : "Hide";
+      try { localStorage.setItem("sp.lib.collapsed", collapsed ? "1" : "0"); } catch (err) {}
+    });
+  }
+
+  // Restore library collapsed state and height from localStorage
+  try {
+    const savedCollapsed = localStorage.getItem("sp.lib.collapsed");
+    if (savedCollapsed === "1") root.classList.add("sp-lib-collapsed");
+    const savedH = localStorage.getItem("sp.lib.height");
+    if (savedH) root.style.setProperty("--sp-lib-height", savedH + "px");
+    const lbl = document.getElementById('sp-libToggle') && document.getElementById('sp-libToggle').querySelector('.sp-libToggleLabel');
+    if (lbl) lbl.textContent = root.classList.contains('sp-lib-collapsed') ? 'Show' : 'Hide';
+  } catch (err) {}
+
+  // Library resizer drag handling
+  const libResizer = document.getElementById("sp-libResizer");
+  const libEl = document.querySelector('.sp-library');
+  if (libResizer && libEl) {
+    let dragging = false;
+    let startY = 0;
+    let startH = 0;
+    const onMove = (ev) => {
+      const y = ev.clientY;
+      let newH = startH + (y - startY);
+      newH = Math.max(80, Math.min(newH, window.innerHeight - 180));
+      root.style.setProperty('--sp-lib-height', newH + 'px');
+    };
+    const onUp = (ev) => {
+      if (!dragging) return;
+      dragging = false;
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      // persist
+      try { const cur = getComputedStyle(libEl).height.replace('px',''); localStorage.setItem('sp.lib.height', Math.round(parseFloat(cur))); } catch (err) {}
+    };
+    libResizer.addEventListener('mousedown', (ev) => {
+      ev.preventDefault();
+      dragging = true;
+      startY = ev.clientY;
+      startH = parseFloat(getComputedStyle(libEl).height);
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
     });
   }
 
@@ -2902,6 +3161,50 @@
     if (!ctm) return { x: 0, y: 0 };
     const p = pt.matrixTransform(ctm.inverse());
     return { x: p.x, y: p.y };
+  }
+
+  function svgPointFromClient(clientX, clientY) {
+    const pt = els.svg.createSVGPoint();
+    pt.x = clientX;
+    pt.y = clientY;
+    const ctm = els.svg.getScreenCTM();
+    if (!ctm) return { x: 0, y: 0 };
+    const p = pt.matrixTransform(ctm.inverse());
+    return { x: p.x, y: p.y };
+  }
+
+  function fmt1(n){ return (Math.round(n * 10) / 10).toString(); }
+
+  function drawMidpointGuides() {
+    if (!els.guides) return;
+
+    const mx = stage.w / 2;
+    const my = stage.h / 2;
+
+    const unit = (els.units && els.units.value) ? els.units.value : "ft";
+    const midW = pxToUnits(mx);
+    const midH = pxToUnits(my);
+
+    els.guides.innerHTML = `
+    <!-- crosshair -->
+    <line x1="${mx}" y1="0" x2="${mx}" y2="${stage.h}"
+      stroke="rgba(0,0,0,0.10)" stroke-width="2" stroke-dasharray="8 8" />
+    <line x1="0" y1="${my}" x2="${stage.w}" y2="${my}"
+      stroke="rgba(0,0,0,0.10)" stroke-width="2" stroke-dasharray="8 8" />
+
+    <!-- midpoint labels -->
+    <text x="${mx}" y="22" text-anchor="middle"
+      fill="rgba(0,0,0,0.65)" font-size="14"
+      stroke="white" stroke-width="6" paint-order="stroke">
+      Mid: ${fmt1(midW)} ${unit}
+    </text>
+
+    <text x="14" y="${my}" text-anchor="start" dominant-baseline="middle"
+      fill="rgba(0,0,0,0.65)" font-size="14"
+      stroke="white" stroke-width="6" paint-order="stroke">
+      Mid: ${fmt1(midH)} ${unit}
+    </text>
+  `;
   }
 
   function svgEl(tag) { return document.createElementNS("http://www.w3.org/2000/svg", tag); }
