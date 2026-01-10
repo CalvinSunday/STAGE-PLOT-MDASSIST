@@ -1,0 +1,2992 @@
+
+<div id="stageplot-app" class="sp-app" tabindex="0">
+  <div class="sp-toolbar">
+    <div class="sp-toolbarLeft">
+      <button id="sp-gridBtn" class="sp-btn" aria-pressed="true">Grid: On</button>
+
+      <label class="sp-check">
+        <input id="sp-snap" type="checkbox" checked>
+        Snap
+      </label>
+
+      <label class="sp-label">
+        Grid size
+        <input id="sp-gridSize" type="number" min="0.1" step="0.1" value="1">
+      </label>
+
+      <span class="sp-sep"></span>
+
+      <button id="sp-addTextBtn" class="sp-btn">Add Text</button>
+
+      <label class="sp-btn sp-fileBtn">
+        Add Image
+        <input id="sp-addImageInput" type="file" accept="image/*">
+      </label>
+
+      <span class="sp-sep"></span>
+
+      <button id="sp-cableModeBtn" class="sp-btn" aria-pressed="false">Cable Tool: Off</button>
+
+      <label class="sp-label">
+        Cable
+        <input id="sp-cableColor" type="color" value="#111111">
+      </label>
+
+      <label class="sp-label">
+        Width
+        <input id="sp-cableWidth" type="number" min="1" max="20" step="1" value="3" style="width:64px">
+      </label>
+    </div>
+
+    <div class="sp-toolbarRight">
+      <button id="sp-undoBtn" class="sp-btn">Undo</button>
+      <button id="sp-redoBtn" class="sp-btn">Redo</button>
+
+      <span class="sp-sep"></span>
+
+      <button id="sp-zoomOut" class="sp-btn">−</button>
+      <button id="sp-zoomIn" class="sp-btn">+</button>
+
+      <span class="sp-sep"></span>
+
+      <button id="sp-saveBtn" class="sp-btn">Save JSON</button>
+      <label class="sp-btn sp-fileBtn">
+        Load JSON
+        <input id="sp-loadInput" type="file" accept="application/json">
+      </label>
+
+      <span class="sp-sep"></span>
+
+      <button id="sp-exportSvgBtn" class="sp-btn">Export SVG</button>
+      <button id="sp-exportPngBtn" class="sp-btn">Export PNG</button>
+    </div>
+  </div>
+
+  <div class="sp-body">
+    <aside class="sp-library">
+      <div class="sp-libhead">
+        <button id="sp-libToggle" class="sp-btn sp-mini" aria-pressed="false">Hide</button>
+        <div class="sp-libtitle">Library</div>
+        <input id="sp-search" class="sp-search" placeholder="Search…" />
+      </div>
+
+      <div id="sp-libgrid" class="sp-libgrid"></div>
+
+      <div class="sp-help">
+        <div><b>Keys</b></div>
+        <div>• <b>C</b> toggle cable tool • <b>Enter</b> finish cable • <b>Esc</b> cancel cable • <b>Backspace</b> remove last cable point</div>
+        <div>• <b>R</b> rotate clockwise • <b>Shift+R</b> counter-clockwise</div>
+        <div>• <b>[</b>/<b>]</b> send back / bring forward • <b>Shift+[</b>/<b>Shift+]</b> to back / to front</div>
+        <div>• <b>D</b> duplicate • <b>G</b> group • <b>Shift+G</b> ungroup</div>
+        <div>• <b>L</b> lock/unlock selection • <b>Del</b> delete</div>
+        <div>• <b>Ctrl/Cmd+Z</b> undo • <b>Ctrl/Cmd+Shift+Z</b> redo</div>
+        <div class="sp-muted" style="margin-top:6px;">Locked items are click-through; unlock them from the Layers panel.</div>
+      </div>
+    </aside>
+
+    <main class="sp-main">
+      <div class="sp-stageTop">
+        <div class="sp-row">
+          <label class="sp-label">Units
+            <select id="sp-units">
+              <option value="ft" selected>ft</option>
+              <option value="m">m</option>
+            </select>
+          </label>
+
+          <label class="sp-label">W
+            <input id="sp-w" type="number" min="1" step="0.5" value="40" style="width:90px">
+          </label>
+
+          <label class="sp-label">H
+            <input id="sp-h" type="number" min="1" step="0.5" value="23" style="width:90px">
+          </label>
+
+          <button id="sp-resizeBtn" class="sp-btn">Resize Stage</button>
+
+          <div id="sp-status" class="sp-status">No selection</div>
+        </div>
+      </div>
+
+      <div class="sp-stageGrid">
+        <div class="sp-canvasWrap">
+          <svg id="sp-svg" class="sp-svg" viewBox="0 0 1200 700" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern id="sp-grid" width="30" height="30" patternUnits="userSpaceOnUse">
+                <path d="M 30 0 L 0 0 0 30" fill="none" stroke="rgba(0,0,0,0.10)" stroke-width="1"/>
+              </pattern>
+              <filter id="sp-shadow" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="rgba(0,0,0,0.20)"/>
+              </filter>
+            </defs>
+
+            <rect id="sp-bg" x="0" y="0" width="1200" height="700" fill="white"/>
+            <rect id="sp-gridRect" x="0" y="0" width="1200" height="700" fill="url(#sp-grid)"/>
+
+            <g id="sp-items"></g>
+            <g id="sp-cableDraft"></g>
+
+            <g id="sp-overlay">
+              <g id="sp-selection" visibility="hidden" pointer-events="none">
+                <rect id="sp-selRect" x="0" y="0" width="0" height="0" fill="none" stroke="rgba(0,120,255,0.95)" stroke-width="2" stroke-dasharray="6 6"/>
+              </g>
+              <g id="sp-verts" pointer-events="auto"></g>
+            </g>
+          </svg>
+        </div>
+
+        <aside class="sp-sidepanel">
+          <div class="sp-panelSection">
+            <div class="sp-panelHeader">Inspector</div>
+
+            <div class="sp-inspectorActions">
+              <button id="sp-sendBackAll" class="sp-btn sp-mini">To Back</button>
+              <button id="sp-sendBack" class="sp-btn sp-mini">Back</button>
+              <button id="sp-bringFwd" class="sp-btn sp-mini">Forward</button>
+              <button id="sp-bringFront" class="sp-btn sp-mini">To Front</button>
+            </div>
+
+            <div class="sp-inspectorActions">
+              <button id="sp-duplicateBtn" class="sp-btn sp-mini">Duplicate</button>
+              <button id="sp-groupBtn" class="sp-btn sp-mini">Group</button>
+              <button id="sp-ungroupBtn" class="sp-btn sp-mini">Ungroup</button>
+            </div>
+
+            <div class="sp-inspectorActions">
+              <button id="sp-lockBtn" class="sp-btn sp-mini" aria-pressed="false">Lock</button>
+              <button id="sp-deleteBtn" class="sp-btn sp-mini">Delete</button>
+              <button id="sp-clearSel" class="sp-btn sp-mini">Clear</button>
+            </div>
+
+            <div id="sp-inspectorFields" class="sp-fields"></div>
+          </div>
+
+          <div class="sp-panelSection">
+            <div class="sp-panelHeader">Layers</div>
+            <div id="sp-layerList" class="sp-layerList"></div>
+          </div>
+        </aside>
+      </div>
+    </main>
+  </div>
+</div>
+
+<style>
+  /* --- Layout stability / best-practice defaults --- */
+  .sp-app, .sp-app * { box-sizing: border-box; }
+  .sp-app { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color:#111; outline:none;
+    /* Keep the stage canvas from jumping when the library is open */
+    display:flex; flex-direction:column;
+    height: var(--sp-app-height, min(90vh, 980px));
+    min-height: 720px;
+  }
+  .sp-toolbar { display:flex; gap:12px; justify-content:space-between; align-items:center; padding:10px; border:1px solid #e5e7eb; background:#fafafa; border-radius:10px; }
+  .sp-toolbarLeft, .sp-toolbarRight { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+  .sp-body { margin-top:10px; display:grid; grid-template-columns: 320px minmax(0, 1fr); gap:10px;
+    flex:1 1 auto; min-height:0; }
+
+  .sp-library { border:1px solid #e5e7eb; border-radius:10px; background:#fff; overflow:hidden; display:flex; flex-direction:column; min-height:0; height:100%; min-width:0; }
+
+  .sp-libhead { display:flex; gap:8px; align-items:center; padding:10px; border-bottom:1px solid #f0f0f0; background:#fafafa; }
+  .sp-libtitle { font-weight:700; }
+  .sp-search { flex:1; border:1px solid #e5e7eb; border-radius:8px; padding:8px 10px; }
+  .sp-libgrid { padding:10px; display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:10px;
+    flex:1 1 auto; min-height:0; overflow:auto; }
+
+  .sp-card { border:1px solid #e5e7eb; border-radius:10px; padding:8px; cursor:pointer; user-select:none; background:#fff; transition: transform .05s ease; }
+  .sp-card:hover { transform: translateY(-1px); }
+  .sp-thumb { width:64px; height:64px; display:flex; align-items:center; justify-content:center; margin:auto; }
+  .sp-name { margin-top:8px; font-size:12px; text-align:center; color:#111; }
+  .sp-help { padding:10px; border-top:1px solid #f0f0f0; font-size:12px; color:#111; }
+  .sp-muted { color:#6b7280; }
+
+  .sp-main { border:1px solid #e5e7eb; border-radius:10px; background:#fff; overflow:hidden; display:flex; flex-direction:column; min-height:0; height:100%; min-width:0; }
+
+  .sp-stageTop { padding:10px; border-bottom:1px solid #f0f0f0; background:#fafafa; }
+  .sp-row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+  .sp-stageGrid { display:flex; flex-direction:column; flex:1 1 auto; min-height:0; }
+  .sp-canvasWrap { flex:1 1 auto; min-height:0; padding:10px; overflow:auto; border-right:none; border-bottom:1px solid #f0f0f0; }
+  .sp-svg { background:#fff; border:1px solid #e5e7eb; border-radius:10px; }
+  .sp-sidepanel { flex:0 0 auto; padding:10px; border-top:1px solid #f0f0f0; background:#fff; display:grid; grid-template-columns: 1.2fr 0.8fr; grid-template-rows: 1fr; gap:10px; height:260px; min-height:180px; max-height:60vh; overflow:hidden; resize:vertical; }
+  .sp-panelSection { border:1px solid #e5e7eb; border-radius:10px; padding:10px; margin-bottom:0; min-height:0; overflow:auto; }
+  .sp-panelHeader { font-weight:700; margin-bottom:10px; }
+  .sp-inspectorActions { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px; }
+  .sp-fields { display:flex; flex-direction:column; gap:10px; }
+  .sp-field { display:flex; flex-direction:column; gap:6px; }
+  .sp-field textarea { width:100%; min-height:70px; resize:vertical; border:1px solid #e5e7eb; border-radius:8px; padding:8px; font-family:inherit; }
+  .sp-inline { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+  .sp-status { margin-left:auto; color:#111; font-size:12px; padding:6px 10px; border:1px solid #e5e7eb; border-radius:999px; background:#fff; }
+
+  .sp-btn { border:1px solid #e5e7eb; background:#fff; border-radius:10px; padding:8px 10px; cursor:pointer; font-size:13px; }
+  .sp-btn:hover { background:#f3f4f6; }
+  .sp-btn:disabled { opacity:0.5; cursor:not-allowed; }
+  .sp-mini { padding:6px 8px; border-radius:8px; font-size:12px; }
+  .sp-label { display:flex; gap:6px; align-items:center; font-size:13px; }
+  .sp-label input, .sp-label select { border:1px solid #e5e7eb; border-radius:8px; padding:6px 8px; font-size:13px; }
+  .sp-check { display:flex; gap:6px; align-items:center; font-size:13px; }
+  .sp-sep { width:1px; height:26px; background:#e5e7eb; display:inline-block; }
+
+  .sp-fileBtn { position:relative; overflow:hidden; }
+  .sp-fileBtn input[type="file"] { position:absolute; inset:0; opacity:0; cursor:pointer; }
+
+  .sp-layerList { display:flex; flex-direction:column; gap:6px; }
+  .sp-layerRow { display:flex; justify-content:space-between; gap:10px; align-items:center; padding:8px; border:1px solid #e5e7eb; border-radius:10px; cursor:pointer; background:#fff; }
+  .sp-layerRow.selected { outline:2px solid rgba(0,120,255,0.35); border-color: rgba(0,120,255,0.65); }
+  .sp-layerLeft { display:flex; flex-direction:column; gap:2px; min-width: 0; }
+  .sp-layerName { font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width: 190px; }
+  .sp-layerMeta { font-size:11px; color:#6b7280; }
+  .sp-layerBtns { display:flex; gap:6px; align-items:center; flex-shrink:0; }
+  .sp-groupRow { background:#fafafa; }
+  .sp-childRow { background:#fff; margin-left:12px; }
+
+  /* Library collapse */
+  #stageplot-app.sp-lib-collapsed .sp-body { grid-template-columns: 56px 1fr; }
+  #stageplot-app.sp-lib-collapsed .sp-libtitle,
+  #stageplot-app.sp-lib-collapsed .sp-search,
+  #stageplot-app.sp-lib-collapsed .sp-libgrid,
+  #stageplot-app.sp-lib-collapsed .sp-help { display:none; }
+  #stageplot-app.sp-lib-collapsed .sp-library { min-width:56px; }
+  #stageplot-app.sp-lib-collapsed .sp-libhead { justify-content:center; }
+
+  @media (max-width: 980px) {
+    .sp-body { grid-template-columns: 1fr; }
+
+    .sp-sidepanel { grid-template-columns: 1fr; height:auto; max-height:none; resize:none; overflow:visible; }
+    .sp-panelSection { overflow:visible; }
+  }
+</style>
+
+<script>
+
+(() => {
+  "use strict";
+  // ============================================================
+  // Stage Plot Creator (single-file app)
+  // ============================================================
+
+  // ---------- DOM ----------
+  const root = document.getElementById("stageplot-app");
+  if (!root) return;
+
+  const els = {
+    svg: document.getElementById("sp-svg"),
+    items: document.getElementById("sp-items"),
+    verts: document.getElementById("sp-verts"),
+    cableDraft: document.getElementById("sp-cableDraft"),
+    gridRect: document.getElementById("sp-gridRect"),
+    gridPattern: document.getElementById("sp-grid"),
+    gridBtn: document.getElementById("sp-gridBtn"),
+    snap: document.getElementById("sp-snap"),
+    gridSize: document.getElementById("sp-gridSize"),
+    libgrid: document.getElementById("sp-libgrid"),
+    search: document.getElementById("sp-search"),
+    w: document.getElementById("sp-w"),
+    h: document.getElementById("sp-h"),
+    resizeBtn: document.getElementById("sp-resizeBtn"),
+    saveBtn: document.getElementById("sp-saveBtn"),
+    loadInput: document.getElementById("sp-loadInput"),
+    exportSvgBtn: document.getElementById("sp-exportSvgBtn"),
+    exportPngBtn: document.getElementById("sp-exportPngBtn"),
+    selection: document.getElementById("sp-selection"),
+    selRect: document.getElementById("sp-selRect"),
+    status: document.getElementById("sp-status"),
+    clearSel: document.getElementById("sp-clearSel"),
+    deleteBtn: document.getElementById("sp-deleteBtn"),
+    lockBtn: document.getElementById("sp-lockBtn"),
+    bringFwd: document.getElementById("sp-bringFwd"),
+    sendBack: document.getElementById("sp-sendBack"),
+    bringFront: document.getElementById("sp-bringFront"),
+    sendBackAll: document.getElementById("sp-sendBackAll"),
+    duplicateBtn: document.getElementById("sp-duplicateBtn"),
+    groupBtn: document.getElementById("sp-groupBtn"),
+    ungroupBtn: document.getElementById("sp-ungroupBtn"),
+    inspectorFields: document.getElementById("sp-inspectorFields"),
+    addTextBtn: document.getElementById("sp-addTextBtn"),
+    addImageInput: document.getElementById("sp-addImageInput"),
+    cableModeBtn: document.getElementById("sp-cableModeBtn"),
+    cableColor: document.getElementById("sp-cableColor"),
+    cableWidth: document.getElementById("sp-cableWidth"),
+    layerList: document.getElementById("sp-layerList"),
+    zoomIn: document.getElementById("sp-zoomIn"),
+    zoomOut: document.getElementById("sp-zoomOut"),
+    units: document.getElementById("sp-units"),
+    undoBtn: document.getElementById("sp-undoBtn"),
+    redoBtn: document.getElementById("sp-redoBtn"),
+    libToggle: document.getElementById("sp-libToggle"),
+  };
+
+  // ---------- Units (stage accuracy) ----------
+  const PX_PER_FT = 30;         // SVG units per foot (so 40ft ≈ 1200)
+  const FT_PER_M = 3.28084;
+
+  function pxPerUnit() {
+    return (els.units && els.units.value === "m") ? (PX_PER_FT * FT_PER_M) : PX_PER_FT;
+  }
+  function unitsToPx(u) { return u * pxPerUnit(); }
+  function pxToUnits(px) { return px / pxPerUnit(); }
+
+  // ---------- SVG library helpers ----------
+  function makeTintableSvgGroup(svg) {
+    // Convert outer <svg> into <g> then replace black fills/strokes with currentColor
+    let s = String(svg || "");
+    s = s.replace(/<svg\b/g, "<g").replace(/<\/svg>/g, "</g>");
+    // rgba(0,0,0,a) => currentColor with opacity preserved
+    s = s.replace(/fill="rgba\(\s*0\s*,\s*0\s*,\s*0\s*,\s*([0-9.]+)\s*\)"/gi, 'fill="currentColor" fill-opacity="$1"');
+    s = s.replace(/stroke="rgba\(\s*0\s*,\s*0\s*,\s*0\s*,\s*([0-9.]+)\s*\)"/gi, 'stroke="currentColor" stroke-opacity="$1"');
+    // hex/keyword black
+    s = s.replace(/fill="#(?:000000|000|111111)"/gi, 'fill="currentColor"');
+    s = s.replace(/stroke="#(?:000000|000|111111)"/gi, 'stroke="currentColor"');
+    s = s.replace(/fill="black"/gi, 'fill="currentColor"');
+    s = s.replace(/stroke="black"/gi, 'stroke="currentColor"');
+    return s;
+  }
+
+  function hashToIndex(str, mod) {
+    let h = 2166136261;
+    for (let i = 0; i < str.length; i++) {
+      h ^= str.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    return Math.abs(h) % mod;
+  }
+
+  const DEFAULT_ICON_COLORS = [
+    "#0f172a", // slate-950
+    "#111827", // gray-ish
+    "#1f2937",
+    "#27272a",
+    "#1b1b1b",
+    "#2c2c2c",
+  ];
+
+  function defaultIconColor(iconId) {
+    return DEFAULT_ICON_COLORS[hashToIndex(iconId, DEFAULT_ICON_COLORS.length)];
+  }
+
+  // ============================================================
+  // ICON SVGs
+  // ============================================================
+  function baseBox(label) {
+    return `<svg width="64" height="64" viewBox="0 0 70 70">
+      <rect x="12" y="14" width="46" height="42" rx="8" fill="rgba(0,0,0,0.82)"/>
+      <text x="35" y="41" text-anchor="middle" font-size="11" fill="rgba(255,255,255,0.92)">${label}</text>
+    </svg>`;
+  }
+
+  // Simple shapes for library
+  function squareThumbSvg() {
+    return `<svg width="64" height="64" viewBox="0 0 70 70">
+      <rect x="16" y="16" width="38" height="38" rx="6"
+            fill="none" stroke="rgba(0,0,0,0.85)" stroke-width="4"/>
+    </svg>`;
+  }
+  function circleThumbSvg() {
+    return `<svg width="64" height="64" viewBox="0 0 70 70">
+      <circle cx="35" cy="35" r="19"
+              fill="none" stroke="rgba(0,0,0,0.85)" stroke-width="4"/>
+    </svg>`;
+  }
+  function textThumbSvg() {
+    return `<svg width="64" height="64" viewBox="0 0 70 70">
+      <rect x="12" y="20" width="46" height="30" rx="8" fill="rgba(0,0,0,0.10)" stroke="rgba(0,0,0,0.55)" stroke-width="2"/>
+      <text x="35" y="41" text-anchor="middle" font-size="18" fill="rgba(0,0,0,0.85)">T</text>
+    </svg>`;
+  }
+
+  // Basics
+  function wedgeSvg() {
+    return `<svg width="64" height="64" viewBox="0 0 70 70">
+      <path d="M15 45 L55 30 L60 50 L20 60 Z" fill="rgba(0,0,0,0.78)"/>
+      <path d="M20 58 L58 48" stroke="rgba(255,255,255,0.35)" stroke-width="2"/>
+    </svg>`;
+  }
+  function ampSvg() {
+    return `<svg width="64" height="64" viewBox="0 0 70 70">
+      <rect x="18" y="18" width="34" height="34" rx="6" fill="rgba(0,0,0,0.82)"/>
+      <g opacity="0.35" stroke="white">
+        <path d="M22 24 H48" />
+        <path d="M22 30 H48" />
+        <path d="M22 36 H48" />
+        <path d="M22 42 H48" />
+        <path d="M22 48 H48" />
+      </g>
+    </svg>`;
+  }
+  function drumSvg() {
+    return `<svg width="64" height="64" viewBox="0 0 70 70">
+      <circle cx="35" cy="38" r="16" fill="rgba(0,0,0,0.82)"/>
+      <circle cx="35" cy="38" r="12" fill="rgba(255,255,255,0.15)"/>
+      <circle cx="18" cy="25" r="7" fill="rgba(0,0,0,0.82)"/>
+      <circle cx="52" cy="25" r="7" fill="rgba(0,0,0,0.82)"/>
+    </svg>`;
+  }
+  function paSvg() {
+    return `<svg width="64" height="64" viewBox="0 0 70 70">
+      <rect x="26" y="16" width="18" height="38" rx="6" fill="rgba(0,0,0,0.82)"/>
+      <circle cx="35" cy="28" r="5" fill="rgba(255,255,255,0.22)"/>
+      <circle cx="35" cy="44" r="7" fill="rgba(255,255,255,0.22)"/>
+    </svg>`;
+  }
+  function micSvg() {
+    return `<svg width="64" height="64" viewBox="0 0 70 70">
+      <circle cx="35" cy="24" r="10" fill="rgba(0,0,0,0.82)"/>
+      <rect x="31" y="34" width="8" height="16" rx="4" fill="rgba(0,0,0,0.82)"/>
+      <rect x="28" y="50" width="14" height="4" rx="2" fill="rgba(0,0,0,0.82)"/>
+    </svg>`;
+  }
+
+  // Gear set
+  function playbackRigSvg(){
+    return `<svg width="64" height="64" viewBox="0 0 70 70">
+      <rect x="14" y="14" width="42" height="42" rx="8" fill="rgba(0,0,0,0.82)"/>
+      <rect x="20" y="22" width="30" height="6" rx="3" fill="rgba(255,255,255,0.22)"/>
+      <rect x="20" y="32" width="30" height="6" rx="3" fill="rgba(255,255,255,0.22)"/>
+      <rect x="20" y="42" width="30" height="6" rx="3" fill="rgba(255,255,255,0.22)"/>
+      <text x="35" y="66" text-anchor="middle" font-size="10" fill="rgba(0,0,0,0.60)">PB</text>
+    </svg>`;
+  }
+  function laptopSvg(){
+    return `<svg width="64" height="64" viewBox="0 0 70 70">
+      <rect x="18" y="18" width="34" height="24" rx="4" fill="rgba(0,0,0,0.82)"/>
+      <rect x="21" y="21" width="28" height="18" rx="3" fill="rgba(255,255,255,0.18)"/>
+      <path d="M14 46 H56 L52 54 H18 Z" fill="rgba(0,0,0,0.82)"/>
+    </svg>`;
+  }
+  function chairSvg(){
+    return `<svg width="64" height="64" viewBox="0 0 70 70">
+      <rect x="24" y="18" width="22" height="18" rx="4" fill="rgba(0,0,0,0.82)"/>
+      <rect x="22" y="34" width="26" height="10" rx="4" fill="rgba(0,0,0,0.82)"/>
+      <rect x="22" y="44" width="4" height="14" fill="rgba(0,0,0,0.82)"/>
+      <rect x="44" y="44" width="4" height="14" fill="rgba(0,0,0,0.82)"/>
+    </svg>`;
+  }
+  function power120Svg(){ return baseBox("120V"); }
+  function powerDropSvg(){ return baseBox("PWR"); }
+
+  function standStraightSvg(){
+    return `<svg width="64" height="64" viewBox="0 0 70 70">
+      <rect x="33" y="10" width="4" height="45" rx="2" fill="rgba(0,0,0,0.82)"/>
+      <path d="M35 55 L20 65" stroke="rgba(0,0,0,0.82)" stroke-width="3"/>
+      <path d="M35 55 L50 65" stroke="rgba(0,0,0,0.82)" stroke-width="3"/>
+      <circle cx="35" cy="10" r="4" fill="rgba(0,0,0,0.82)"/>
+    </svg>`;
+  }
+  function standBoomSvg(){
+    return `<svg width="64" height="64" viewBox="0 0 70 70">
+      <rect x="33" y="14" width="4" height="41" rx="2" fill="rgba(0,0,0,0.82)"/>
+      <path d="M35 22 L56 14" stroke="rgba(0,0,0,0.82)" stroke-width="3" stroke-linecap="round"/>
+      <path d="M35 55 L20 65" stroke="rgba(0,0,0,0.82)" stroke-width="3"/>
+      <path d="M35 55 L50 65" stroke="rgba(0,0,0,0.82)" stroke-width="3"/>
+      <circle cx="56" cy="14" r="3.5" fill="rgba(0,0,0,0.82)"/>
+    </svg>`;
+  }
+  function standShortBoomSvg(){
+    return `<svg width="64" height="64" viewBox="0 0 70 70">
+      <rect x="33" y="26" width="4" height="29" rx="2" fill="rgba(0,0,0,0.82)"/>
+      <path d="M35 32 L54 26" stroke="rgba(0,0,0,0.82)" stroke-width="3" stroke-linecap="round"/>
+      <path d="M35 55 L22 65" stroke="rgba(0,0,0,0.82)" stroke-width="3"/>
+      <path d="M35 55 L48 65" stroke="rgba(0,0,0,0.82)" stroke-width="3"/>
+      <circle cx="54" cy="26" r="3.5" fill="rgba(0,0,0,0.82)"/>
+    </svg>`;
+  }
+
+  function wirelessPackSvg(){
+    return `<svg width="64" height="64" viewBox="0 0 70 70">
+      <rect x="24" y="14" width="22" height="36" rx="5" fill="rgba(0,0,0,0.82)"/>
+      <rect x="27" y="18" width="16" height="10" rx="2" fill="rgba(255,255,255,0.18)"/>
+      <circle cx="30" cy="34" r="1.5" fill="rgba(255,255,255,0.45)"/>
+      <circle cx="35" cy="34" r="1.5" fill="rgba(255,255,255,0.45)"/>
+      <circle cx="40" cy="34" r="1.5" fill="rgba(255,255,255,0.45)"/>
+      <rect x="22" y="24" width="4" height="18" rx="2" fill="rgba(0,0,0,0.65)"/>
+      <path d="M46 16 L54 10" stroke="rgba(0,0,0,0.82)" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="54" cy="10" r="2.2" fill="rgba(0,0,0,0.82)"/>
+      <text x="35" y="62" text-anchor="middle" font-size="10" fill="rgba(0,0,0,0.60)">PACK</text>
+    </svg>`;
+  }
+
+  function earsRackSvg(){ return baseBox("IEM"); }
+  function diMonoSvg(){ return baseBox("DI"); }
+  function diStereoSvg(){ return baseBox("2DI"); }
+
+  function riserSvg(){
+    return `<svg width="64" height="64" viewBox="0 0 70 70">
+      <rect x="10" y="20" width="50" height="26" rx="6"
+        fill="rgba(0,0,0,0.08)" stroke="rgba(0,0,0,0.75)" stroke-width="2"/>
+      <rect x="12" y="46" width="6" height="8" rx="2" fill="rgba(0,0,0,0.55)"/>
+      <rect x="52" y="46" width="6" height="8" rx="2" fill="rgba(0,0,0,0.55)"/>
+      <rect x="24" y="46" width="6" height="8" rx="2" fill="rgba(0,0,0,0.55)"/>
+      <rect x="40" y="46" width="6" height="8" rx="2" fill="rgba(0,0,0,0.55)"/>
+      <text x="35" y="36" text-anchor="middle" font-size="11" fill="rgba(0,0,0,0.75)">RISER</text>
+    </svg>`;
+  }
+
+  function stoolSvg(){
+    return `<svg width="64" height="64" viewBox="0 0 70 70">
+      <ellipse cx="35" cy="20" rx="14" ry="8" fill="rgba(0,0,0,0.82)"/>
+      <path d="M27 26 L22 62" stroke="rgba(0,0,0,0.82)" stroke-width="4" stroke-linecap="round"/>
+      <path d="M43 26 L48 62" stroke="rgba(0,0,0,0.82)" stroke-width="4" stroke-linecap="round"/>
+      <path d="M35 26 L35 66" stroke="rgba(0,0,0,0.82)" stroke-width="4" stroke-linecap="round"/>
+      <ellipse cx="35" cy="46" rx="14" ry="6" fill="none" stroke="rgba(255,255,255,0.16)" stroke-width="3"/>
+    </svg>`;
+  }
+  function kbdStandSvg(){
+    return `<svg width="64" height="64" viewBox="0 0 70 70">
+      <rect x="18" y="16" width="34" height="8" rx="4" fill="rgba(0,0,0,0.82)"/>
+      <path d="M22 24 L48 56" stroke="rgba(0,0,0,0.82)" stroke-width="4" stroke-linecap="round"/>
+      <path d="M48 24 L22 56" stroke="rgba(0,0,0,0.82)" stroke-width="4" stroke-linecap="round"/>
+    </svg>`;
+  }
+  function gtrStandSvg(){
+    return `<svg width="64" height="64" viewBox="0 0 70 70">
+      <path d="M35 18 C30 18 27 22 27 26 C27 30 30 34 35 34 C40 34 43 30 43 26 C43 22 40 18 35 18 Z" fill="rgba(0,0,0,0.82)"/>
+      <path d="M35 34 L35 48" stroke="rgba(0,0,0,0.82)" stroke-width="4" stroke-linecap="round"/>
+      <path d="M35 48 L22 60" stroke="rgba(0,0,0,0.82)" stroke-width="4" stroke-linecap="round"/>
+      <path d="M35 48 L48 60" stroke="rgba(0,0,0,0.82)" stroke-width="4" stroke-linecap="round"/>
+    </svg>`;
+  }
+  function stageBoxSvg(){ return baseBox("SB"); }
+  function rugSvg(){
+    return `<svg width="64" height="64" viewBox="0 0 70 70">
+      <rect x="14" y="16" width="42" height="38" rx="6" fill="rgba(0,0,0,0.08)" stroke="rgba(0,0,0,0.55)" stroke-width="2" stroke-dasharray="6 4"/>
+      <text x="35" y="39" text-anchor="middle" font-size="11" fill="rgba(0,0,0,0.7)">RUG</text>
+    </svg>`;
+  }
+  function rfAntennaSvg(){
+    return `<svg width="64" height="64" viewBox="0 0 70 70">
+      <rect x="28" y="42" width="14" height="10" rx="3" fill="rgba(0,0,0,0.82)"/>
+      <rect x="33" y="18" width="4" height="24" rx="2" fill="rgba(0,0,0,0.82)"/>
+      <path d="M35 16 C44 18 48 26 48 35" fill="none" stroke="rgba(0,0,0,0.55)" stroke-width="2"/>
+      <path d="M35 12 C48 15 56 26 56 40" fill="none" stroke="rgba(0,0,0,0.30)" stroke-width="2"/>
+    </svg>`;
+  }
+
+  // Instruments / people (improved silhouettes)
+  function bandMemberSvg(){
+    return `<svg width="64" height="64" viewBox="0 0 70 70">
+      <g fill="rgba(0,0,0,0.82)">
+        <circle cx="35" cy="14" r="8"/>
+        <rect x="22" y="24" width="26" height="26" rx="10"/>
+        <rect x="20.5" y="30" width="6" height="22" rx="3"/>
+        <rect x="43.5" y="30" width="6" height="22" rx="3"/>
+        <path d="M28 50 L42 50 L45 66 L25 66 Z"/>
+      </g>
+    </svg>`;
+  }
+
+  function singerSvg(){
+    return `<svg width="64" height="64" viewBox="0 0 70 70">
+      <g fill="rgba(0,0,0,0.82)">
+        <circle cx="35" cy="14" r="8"/>
+        <rect x="22" y="24" width="26" height="26" rx="10"/>
+        <rect x="20.5" y="30" width="6" height="22" rx="3"/>
+        <rect x="43.5" y="30" width="6" height="22" rx="3"/>
+        <path d="M28 50 L42 50 L45 66 L25 66 Z"/>
+      </g>
+      <ellipse cx="35" cy="17.5" rx="2.2" ry="3.0" fill="rgba(255,255,255,0.95)"/>
+    </svg>`;
+  }
+
+  function acousticGtrSvg(){
+    return `<svg width="64" height="64" viewBox="0 0 70 70">
+      <path d="M35 24
+               C29.5 24 25.5 27.6 25.5 33
+               C25.5 36.4 27.0 39.2 29.4 41.0
+               C25.2 43.0 23.2 46.8 23.8 51.0
+               C24.8 57.0 29.8 61.5 35 61.5
+               C40.2 61.5 45.2 57.0 46.2 51.0
+               C46.8 46.8 44.8 43.0 40.6 41.0
+               C43.0 39.2 44.5 36.4 44.5 33
+               C44.5 27.6 40.5 24 35 24 Z"
+            fill="rgba(0,0,0,0.82)"/>
+      <rect x="32" y="9" width="6" height="18" rx="3" fill="rgba(0,0,0,0.82)"/>
+      <path d="M28 4 H42
+               C44.2 4 46 5.8 46 8
+               V12
+               C46 14.2 44.2 16 42 16
+               H28 Z" fill="rgba(0,0,0,0.82)"/>
+      <circle cx="29.5" cy="7" r="1.25" fill="rgba(0,0,0,0.82)"/>
+      <circle cx="29.5" cy="12.5" r="1.25" fill="rgba(0,0,0,0.82)"/>
+      <circle cx="40.5" cy="7" r="1.25" fill="rgba(0,0,0,0.82)"/>
+      <circle cx="40.5" cy="12.5" r="1.25" fill="rgba(0,0,0,0.82)"/>
+      <circle cx="35" cy="38.5" r="5.4" fill="rgba(255,255,255,0.95)"/>
+      <rect x="28" y="52" width="14" height="4.6" rx="2.3" fill="rgba(255,255,255,0.95)"/>
+    </svg>`;
+  }
+
+  function electricGtrSvg(){
+    return `<svg width="64" height="64" viewBox="0 0 70 70">
+      <!-- body -->
+      <path d="M29 30
+               C24.5 30 21.5 33.6 21.5 37.5
+               C21.5 40.8 23.8 43.6 26.8 44.6
+               C24.8 47.2 25.0 50.8 27.2 53.2
+               C29.6 55.8 33 57.2 35 57.2
+               C37 57.2 40.4 55.8 42.8 53.2
+               C45.0 50.8 45.2 47.2 43.2 44.6
+               C46.2 43.6 48.5 40.8 48.5 37.5
+               C48.5 33.6 45.5 30 41 30
+               C39.5 24.5 30.5 24.5 29 30 Z"
+            fill="rgba(0,0,0,0.82)"/>
+      <!-- neck -->
+      <rect x="32" y="8" width="6" height="23" rx="3" fill="rgba(0,0,0,0.82)"/>
+      <!-- headstock -->
+      <path d="M31 4 H44
+               C46 4 47.5 5.5 47.5 7.5
+               V14
+               C47.5 16 46 17.5 44 17.5
+               H31 Z" fill="rgba(0,0,0,0.82)"/>
+      <circle cx="46.2" cy="6.7" r="1.2" fill="rgba(0,0,0,0.82)"/>
+      <circle cx="46.2" cy="9.1" r="1.2" fill="rgba(0,0,0,0.82)"/>
+      <circle cx="46.2" cy="11.5" r="1.2" fill="rgba(0,0,0,0.82)"/>
+      <circle cx="46.2" cy="13.9" r="1.2" fill="rgba(0,0,0,0.82)"/>
+      <!-- pickguard hint -->
+      <path d="M28 41 C32 38 38 38 42 41 C39 46 31 46 28 41 Z"
+            fill="rgba(255,255,255,0.15)"/>
+    </svg>`;
+  }
+
+  function bassGtrSvg(){
+    return `<svg width="64" height="64" viewBox="0 0 70 70">
+      <!-- body -->
+      <path d="M28.5 31
+               C23.5 31 20.5 34.8 20.5 39
+               C20.5 42.4 22.7 45.2 25.8 46.4
+               C24.0 49.2 24.2 53.0 26.6 55.6
+               C29.4 58.6 33.3 60.0 35 60.0
+               C36.7 60.0 40.6 58.6 43.4 55.6
+               C45.8 53.0 46.0 49.2 44.2 46.4
+               C47.3 45.2 49.5 42.4 49.5 39
+               C49.5 34.8 46.5 31 41.5 31
+               C40.0 24.5 30.0 24.5 28.5 31 Z"
+            fill="rgba(0,0,0,0.82)"/>
+      <!-- longer neck -->
+      <rect x="32" y="5" width="6" height="28" rx="3" fill="rgba(0,0,0,0.82)"/>
+      <!-- longer headstock -->
+      <path d="M31 1 H46
+               C48.2 1 50 2.8 50 5
+               V13.5
+               C50 15.7 48.2 17.5 46 17.5
+               H31 Z" fill="rgba(0,0,0,0.82)"/>
+      <!-- 4 tuners -->
+      <circle cx="48.6" cy="4.3" r="1.2" fill="rgba(0,0,0,0.82)"/>
+      <circle cx="48.6" cy="6.9" r="1.2" fill="rgba(0,0,0,0.82)"/>
+      <circle cx="48.6" cy="9.5" r="1.2" fill="rgba(0,0,0,0.82)"/>
+      <circle cx="48.6" cy="12.1" r="1.2" fill="rgba(0,0,0,0.82)"/>
+      <path d="M28.5 44 C32 41 38 41 41.5 44 C39.5 48 30.5 48 28.5 44 Z"
+            fill="rgba(255,255,255,0.12)"/>
+    </svg>`;
+  }
+
+  function violinSvg(){
+    return `<svg width="64" height="64" viewBox="0 0 70 70">
+      <!-- body -->
+      <path d="M35 22
+               C31.2 22 28.6 24.8 28.6 28.2
+               C28.6 30.2 29.5 32.0 31.0 33.2
+               C28.8 34.6 27.4 36.8 27.6 39.6
+               C27.9 44.8 31.2 48.0 35 48.0
+               C38.8 48.0 42.1 44.8 42.4 39.6
+               C42.6 36.8 41.2 34.6 39.0 33.2
+               C40.5 32.0 41.4 30.2 41.4 28.2
+               C41.4 24.8 38.8 22 35 22 Z"
+            fill="rgba(0,0,0,0.82)"/>
+      <!-- neck -->
+      <rect x="33" y="12" width="4" height="12" rx="2" fill="rgba(0,0,0,0.82)"/>
+      <!-- scroll -->
+      <path d="M31 6 H39 C41 6 42.5 7.5 42.5 9.5
+               V12.5 C42.5 14.5 41 16 39 16 H31 Z"
+            fill="rgba(0,0,0,0.82)"/>
+      <circle cx="40.8" cy="8.8" r="1.0" fill="rgba(0,0,0,0.82)"/>
+      <circle cx="40.8" cy="11.6" r="1.0" fill="rgba(0,0,0,0.82)"/>
+      <!-- f-holes hints -->
+      <rect x="31.2" y="33.5" width="2.0" height="10.5" rx="1.0" fill="rgba(255,255,255,0.22)"/>
+      <rect x="36.8" y="33.5" width="2.0" height="10.5" rx="1.0" fill="rgba(255,255,255,0.22)"/>
+    </svg>`;
+  }
+
+  // Misc stage objects
+  function lampShadeSvg(){ return `<svg width="64" height="64" viewBox="0 0 70 70">
+    <path d="M22 22 H48 L44 36 H26 Z" fill="rgba(0,0,0,0.18)" stroke="rgba(0,0,0,0.75)" stroke-width="2"/>
+    <rect x="33" y="36" width="4" height="16" rx="2" fill="rgba(0,0,0,0.82)"/>
+    <rect x="28" y="52" width="14" height="4" rx="2" fill="rgba(0,0,0,0.82)"/>
+  </svg>`; }
+
+  function ledWallSvg(){
+    const dots = Array.from({length: 20}).map((_,i)=> {
+      const x = 14 + (i%5)*10;
+      const y = 20 + Math.floor(i/5)*7;
+      return `<rect x="${x}" y="${y}" width="6" height="4" rx="1"/>`;
+    }).join("");
+    return `<svg width="64" height="64" viewBox="0 0 70 70">
+      <rect x="10" y="16" width="50" height="34" rx="6" fill="rgba(0,0,0,0.82)"/>
+      <g fill="rgba(255,255,255,0.12)">${dots}</g>
+    </svg>`;
+  }
+
+  function tvSvg(){ return `<svg width="64" height="64" viewBox="0 0 70 70">
+    <rect x="12" y="16" width="46" height="30" rx="6" fill="rgba(0,0,0,0.82)"/>
+    <rect x="16" y="20" width="38" height="22" rx="4" fill="rgba(255,255,255,0.16)"/>
+    <rect x="30" y="46" width="10" height="6" rx="2" fill="rgba(0,0,0,0.82)"/>
+    <rect x="24" y="52" width="22" height="4" rx="2" fill="rgba(0,0,0,0.82)"/>
+  </svg>`; }
+
+  function speakerTopSvg(){ return `<svg width="64" height="64" viewBox="0 0 70 70">
+    <rect x="22" y="12" width="26" height="46" rx="6" fill="rgba(0,0,0,0.82)"/>
+    <circle cx="35" cy="26" r="6" fill="rgba(255,255,255,0.18)"/>
+    <circle cx="35" cy="44" r="9" fill="rgba(255,255,255,0.18)"/>
+  </svg>`; }
+
+  function subSvg(){ return `<svg width="64" height="64" viewBox="0 0 70 70">
+    <rect x="16" y="18" width="38" height="38" rx="6" fill="rgba(0,0,0,0.82)"/>
+    <circle cx="35" cy="37" r="12" fill="rgba(255,255,255,0.16)"/>
+    <circle cx="35" cy="37" r="7" fill="rgba(255,255,255,0.12)"/>
+  </svg>`; }
+
+  function tableSvg(){ return `<svg width="64" height="64" viewBox="0 0 70 70">
+    <rect x="14" y="18" width="42" height="18" rx="6" fill="rgba(0,0,0,0.18)" stroke="rgba(0,0,0,0.75)" stroke-width="2"/>
+    <rect x="18" y="36" width="6" height="18" rx="2" fill="rgba(0,0,0,0.82)"/>
+    <rect x="46" y="36" width="6" height="18" rx="2" fill="rgba(0,0,0,0.82)"/>
+  </svg>`; }
+
+  function sideTableSvg(){ return `<svg width="64" height="64" viewBox="0 0 70 70">
+    <rect x="22" y="20" width="26" height="14" rx="6" fill="rgba(0,0,0,0.18)" stroke="rgba(0,0,0,0.75)" stroke-width="2"/>
+    <rect x="26" y="34" width="6" height="18" rx="2" fill="rgba(0,0,0,0.82)"/>
+    <rect x="38" y="34" width="6" height="18" rx="2" fill="rgba(0,0,0,0.82)"/>
+  </svg>`; }
+
+  function albatrosIemAmpSvg(){ return `<svg width="64" height="64" viewBox="0 0 70 70">
+    <rect x="16" y="18" width="38" height="34" rx="7" fill="rgba(0,0,0,0.82)"/>
+    <circle cx="44" cy="35" r="6" fill="rgba(255,255,255,0.18)"/>
+    <rect x="20" y="24" width="16" height="6" rx="3" fill="rgba(255,255,255,0.18)"/>
+    <text x="35" y="64" text-anchor="middle" font-size="10" fill="rgba(0,0,0,0.60)">IEM AMP</text>
+  </svg>`; }
+
+  function grandPianoSvg(){
+    return `<svg width="64" height="64" viewBox="0 0 70 70">
+      <!-- improved top-down grand -->
+      <path d="M18 52
+               C10 40 12 19 33 12
+               C52 6 64 19 64 34
+               C64 52 50 64 33 62
+               C24 61 20 58 18 52 Z"
+            fill="rgba(0,0,0,0.82)"/>
+      <!-- keyboard edge -->
+      <rect x="20" y="42" width="34" height="12" rx="3" fill="rgba(255,255,255,0.20)"/>
+      <g fill="rgba(0,0,0,0.55)">
+        <rect x="22" y="43" width="2" height="10" rx="1"/>
+        <rect x="26" y="43" width="2" height="10" rx="1"/>
+        <rect x="30" y="43" width="2" height="10" rx="1"/>
+        <rect x="34" y="43" width="2" height="10" rx="1"/>
+        <rect x="38" y="43" width="2" height="10" rx="1"/>
+        <rect x="42" y="43" width="2" height="10" rx="1"/>
+        <rect x="46" y="43" width="2" height="10" rx="1"/>
+        <rect x="50" y="43" width="2" height="10" rx="1"/>
+      </g>
+      <!-- lid seam -->
+      <path d="M33 12 L50 60" stroke="rgba(255,255,255,0.12)" stroke-width="3" stroke-linecap="round"/>
+    </svg>`;
+  }
+
+  function keyboardSvg(){
+    // Nord-ish top-down keyboard
+    const keys = Array.from({length: 10}).map((_,i)=>`<rect x="${16+i*3.6}" y="31" width="2.4" height="14" rx="1"/>`).join("");
+    return `<svg width="64" height="64" viewBox="0 0 70 70">
+      <rect x="10" y="22" width="50" height="26" rx="8" fill="rgba(0,0,0,0.82)"/>
+      <rect x="14" y="28" width="42" height="18" rx="5" fill="rgba(255,255,255,0.20)"/>
+      <g fill="rgba(0,0,0,0.55)">${keys}</g>
+      <circle cx="57" cy="35" r="2.4" fill="rgba(255,255,255,0.22)"/>
+    </svg>`;
+  }
+
+  function drumPadSvg(){ return `<svg width="64" height="64" viewBox="0 0 70 70">
+    <rect x="14" y="16" width="42" height="38" rx="8" fill="rgba(0,0,0,0.82)"/>
+    <g fill="rgba(255,255,255,0.14)">
+      <rect x="20" y="22" width="12" height="10" rx="3"/>
+      <rect x="38" y="22" width="12" height="10" rx="3"/>
+      <rect x="20" y="36" width="12" height="10" rx="3"/>
+      <rect x="38" y="36" width="12" height="10" rx="3"/>
+    </g>
+  </svg>`; }
+
+  function guitarBoatSvg(){ return `<svg width="64" height="64" viewBox="0 0 70 70">
+    <rect x="10" y="20" width="50" height="26" rx="8" fill="rgba(0,0,0,0.18)" stroke="rgba(0,0,0,0.75)" stroke-width="2"/>
+    <g stroke="rgba(0,0,0,0.75)" stroke-width="2" stroke-linecap="round">
+      <path d="M18 24 V42"/>
+      <path d="M26 24 V42"/>
+      <path d="M34 24 V42"/>
+      <path d="M42 24 V42"/>
+      <path d="M50 24 V42"/>
+    </g>
+    <text x="35" y="62" text-anchor="middle" font-size="10" fill="rgba(0,0,0,0.60)">GTR BOAT</text>
+  </svg>`; }
+
+  // Lighting fixtures (generic)
+  function parCanSvg(){ return `<svg width="64" height="64" viewBox="0 0 70 70">
+    <circle cx="35" cy="32" r="14" fill="rgba(0,0,0,0.82)"/>
+    <circle cx="35" cy="32" r="8" fill="rgba(255,255,255,0.16)"/>
+    <rect x="28" y="48" width="14" height="6" rx="3" fill="rgba(0,0,0,0.82)"/>
+  </svg>`; }
+
+  function fresnelSvg(){ return `<svg width="64" height="64" viewBox="0 0 70 70">
+    <rect x="20" y="18" width="30" height="28" rx="8" fill="rgba(0,0,0,0.82)"/>
+    <circle cx="35" cy="32" r="7" fill="rgba(255,255,255,0.16)"/>
+    <rect x="28" y="46" width="14" height="8" rx="4" fill="rgba(0,0,0,0.82)"/>
+  </svg>`; }
+
+  function lekoSvg(){ return `<svg width="64" height="64" viewBox="0 0 70 70">
+    <rect x="16" y="22" width="26" height="20" rx="6" fill="rgba(0,0,0,0.82)"/>
+    <path d="M42 24 L58 32 L42 40 Z" fill="rgba(0,0,0,0.82)"/>
+    <circle cx="26" cy="32" r="6" fill="rgba(255,255,255,0.16)"/>
+  </svg>`; }
+
+  function movingHeadSpotSvg(){ return `<svg width="64" height="64" viewBox="0 0 70 70">
+    <rect x="22" y="42" width="26" height="12" rx="4" fill="rgba(0,0,0,0.82)"/>
+    <rect x="26" y="22" width="18" height="22" rx="6" fill="rgba(0,0,0,0.82)"/>
+    <circle cx="35" cy="33" r="6" fill="rgba(255,255,255,0.16)"/>
+  </svg>`; }
+
+  function movingHeadWashSvg(){ return `<svg width="64" height="64" viewBox="0 0 70 70">
+    <rect x="22" y="42" width="26" height="12" rx="4" fill="rgba(0,0,0,0.82)"/>
+    <rect x="24" y="22" width="22" height="22" rx="7" fill="rgba(0,0,0,0.82)"/>
+    <circle cx="35" cy="33" r="8" fill="rgba(255,255,255,0.14)"/>
+  </svg>`; }
+
+  function ledBarSvg(){
+    const dots = Array.from({length: 8}).map((_,i)=>`<circle cx="${18+i*5}" cy="35" r="1.5"/>`).join("");
+    return `<svg width="64" height="64" viewBox="0 0 70 70">
+      <rect x="12" y="30" width="46" height="10" rx="5" fill="rgba(0,0,0,0.82)"/>
+      <g fill="rgba(255,255,255,0.18)">${dots}</g>
+    </svg>`;
+  }
+
+  function strobeSvg(){ return `<svg width="64" height="64" viewBox="0 0 70 70">
+    <rect x="14" y="24" width="42" height="22" rx="6" fill="rgba(0,0,0,0.82)"/>
+    <rect x="18" y="28" width="34" height="14" rx="4" fill="rgba(255,255,255,0.18)"/>
+    <path d="M58 24 L64 18" stroke="rgba(0,0,0,0.6)" stroke-width="2"/>
+  </svg>`; }
+
+  function blinder2Svg(){ return `<svg width="64" height="64" viewBox="0 0 70 70">
+    <rect x="16" y="26" width="38" height="18" rx="6" fill="rgba(0,0,0,0.82)"/>
+    <circle cx="28" cy="35" r="6" fill="rgba(255,255,255,0.16)"/>
+    <circle cx="42" cy="35" r="6" fill="rgba(255,255,255,0.16)"/>
+  </svg>`; }
+
+  function blinder4Svg(){ return `<svg width="64" height="64" viewBox="0 0 70 70">
+    <rect x="14" y="22" width="42" height="26" rx="6" fill="rgba(0,0,0,0.82)"/>
+    <circle cx="26" cy="31" r="5" fill="rgba(255,255,255,0.16)"/>
+    <circle cx="44" cy="31" r="5" fill="rgba(255,255,255,0.16)"/>
+    <circle cx="26" cy="39" r="5" fill="rgba(255,255,255,0.16)"/>
+    <circle cx="44" cy="39" r="5" fill="rgba(255,255,255,0.16)"/>
+  </svg>`; }
+
+  function followspotSvg(){ return `<svg width="64" height="64" viewBox="0 0 70 70">
+    <rect x="16" y="32" width="22" height="12" rx="6" fill="rgba(0,0,0,0.82)"/>
+    <path d="M38 32 L60 26 L60 50 L38 44 Z" fill="rgba(0,0,0,0.82)"/>
+    <rect x="22" y="44" width="10" height="10" rx="3" fill="rgba(0,0,0,0.82)"/>
+  </svg>`; }
+
+  function hazerSvg(){ return `<svg width="64" height="64" viewBox="0 0 70 70">
+    <rect x="16" y="34" width="34" height="18" rx="6" fill="rgba(0,0,0,0.82)"/>
+    <path d="M50 38 C58 38 62 44 62 52" fill="none" stroke="rgba(0,0,0,0.45)" stroke-width="3"/>
+    <path d="M50 34 C60 34 66 42 66 54" fill="none" stroke="rgba(0,0,0,0.25)" stroke-width="3"/>
+  </svg>`; }
+
+  // ============================================================
+  // LIBRARY ITEMS
+  // ============================================================
+  const LIB_ITEMS = [
+    // Quick-create tools
+    { type:"text", id:"text_box", name:"Text Box", svg: textThumbSvg() },
+    { type:"shape", id:"shape_square", name:"Square", svg: squareThumbSvg(), shape:"rect", defW: 200, defH: 200 },
+    { type:"shape", id:"shape_circle", name:"Circle", svg: circleThumbSvg(), shape:"circle", defW: 200, defH: 200 },
+
+    // Playback / utilities
+    { type:"icon", id:"playback_rig", name:"Playback Rig", svg: playbackRigSvg() },
+    { type:"icon", id:"laptop", name:"Laptop", svg: laptopSvg() },
+    { type:"icon", id:"chair", name:"Chair", svg: chairSvg() },
+    { type:"icon", id:"power_120v", name:"120V", svg: power120Svg() },
+    { type:"icon", id:"power_drop", name:"Power Drop", svg: powerDropSvg() },
+
+    // Stands / RF / IEM
+    { type:"icon", id:"stand_straight", name:"Stand (Straight)", svg: standStraightSvg() },
+    { type:"icon", id:"stand_boom", name:"Stand (Boom)", svg: standBoomSvg() },
+    { type:"icon", id:"stand_short_boom", name:"Stand (Short Boom)", svg: standShortBoomSvg() },
+    { type:"icon", id:"wireless_pack", name:"Wireless Pack", svg: wirelessPackSvg() },
+    { type:"icon", id:"ears_rack", name:"Wireless Ears Rack", svg: earsRackSvg() },
+    { type:"icon", id:"rf_antenna", name:"RF Antenna", svg: rfAntennaSvg() },
+    { type:"icon", id:"albatros_iem", name:"Albatros IEM Amp", svg: albatrosIemAmpSvg() },
+
+    // DIs / boxes
+    { type:"icon", id:"di_mono", name:"DI (Mono)", svg: diMonoSvg() },
+    { type:"icon", id:"di_stereo", name:"DI (Stereo)", svg: diStereoSvg() },
+    { type:"icon", id:"stage_box", name:"Stage Box", svg: stageBoxSvg() },
+
+    // Stage furniture / platforms
+    { type:"icon", id:"riser", name:"Riser", svg: riserSvg(), defS: 3.0 },
+    { type:"icon", id:"rug", name:"Rug", svg: rugSvg() },
+    { type:"icon", id:"table", name:"Table", svg: tableSvg(), defS: 2.4 },
+    { type:"icon", id:"side_table", name:"Side Table", svg: sideTableSvg(), defS: 1.8 },
+    { type:"icon", id:"lamp_shade", name:"Lamp (Shade)", svg: lampShadeSvg() },
+
+    // Video / walls
+    { type:"icon", id:"led_wall", name:"LED Wall", svg: ledWallSvg(), defS: 3.2 },
+    { type:"icon", id:"tv", name:"TV", svg: tvSvg(), defS: 2.2 },
+
+    // Audio PA
+    { type:"icon", id:"speaker_top", name:"Speaker (Top)", svg: speakerTopSvg() },
+    { type:"icon", id:"sub", name:"Sub", svg: subSvg() },
+
+    // Instruments / people
+    { type:"icon", id:"acoustic_guitar", name:"Acoustic Guitar", svg: acousticGtrSvg() },
+    { type:"icon", id:"electric_guitar", name:"Electric Guitar", svg: electricGtrSvg() },
+    { type:"icon", id:"bass", name:"Bass Guitar", svg: bassGtrSvg() },
+    { type:"icon", id:"violin", name:"Violin", svg: violinSvg() },
+    { type:"icon", id:"guitar_boat", name:"Guitar Boat", svg: guitarBoatSvg(), defS: 2.6 },
+    { type:"icon", id:"gtr_stand", name:"Guitar Stand", svg: gtrStandSvg() },
+    { type:"icon", id:"kbd_stool", name:"Keyboard Stool", svg: stoolSvg() },
+    { type:"icon", id:"kbd_stand", name:"Keyboard Stand", svg: kbdStandSvg() },
+    { type:"icon", id:"keyboard", name:"Keyboard", svg: keyboardSvg(), defS: 2.6 },
+    { type:"icon", id:"grand_piano", name:"Grand Piano", svg: grandPianoSvg(), defS: 2.8 },
+    { type:"icon", id:"drum_pad", name:"Drum Pad", svg: drumPadSvg() },
+    { type:"icon", id:"band_member", name:"Band Member (Unisex)", svg: bandMemberSvg() },
+    { type:"icon", id:"singer", name:"Singer (Unisex)", svg: singerSvg() },
+
+    // Lighting fixtures
+    { type:"icon", id:"par_can", name:"Light: PAR Can", svg: parCanSvg() },
+    { type:"icon", id:"fresnel", name:"Light: Fresnel", svg: fresnelSvg() },
+    { type:"icon", id:"leko", name:"Light: Ellipsoidal (Leko)", svg: lekoSvg() },
+    { type:"icon", id:"moving_spot", name:"Light: Moving Head Spot", svg: movingHeadSpotSvg() },
+    { type:"icon", id:"moving_wash", name:"Light: Moving Head Wash", svg: movingHeadWashSvg() },
+    { type:"icon", id:"led_bar", name:"Light: LED Bar", svg: ledBarSvg() },
+    { type:"icon", id:"strobe", name:"Light: Strobe", svg: strobeSvg() },
+    { type:"icon", id:"blinder_2", name:"Light: 2-Lite Blinder", svg: blinder2Svg() },
+    { type:"icon", id:"blinder_4", name:"Light: 4-Lite Blinder", svg: blinder4Svg() },
+    { type:"icon", id:"followspot", name:"Light: Followspot", svg: followspotSvg() },
+    { type:"icon", id:"hazer", name:"Atmos: Hazer/Fog", svg: hazerSvg() },
+
+    // Basics
+    { type:"icon", id:"wedge", name:"Wedge", svg: wedgeSvg() },
+    { type:"icon", id:"amp", name:"Amp", svg: ampSvg() },
+    { type:"icon", id:"drum", name:"Drum Kit", svg: drumSvg() },
+    { type:"icon", id:"pa", name:"PA", svg: paSvg() },
+    { type:"icon", id:"mic", name:"Mic", svg: micSvg() },
+  ].map((x) => {
+    if (x.type === "icon") {
+      return { ...x, svgGroup: makeTintableSvgGroup(x.svg) };
+    }
+    return x;
+  });
+
+  function findLibById(id){ return LIB_ITEMS.find(x => x.id === id) || null; }
+
+  // ============================================================
+  // STATE
+  // ============================================================
+  let stage = { w: 1200, h: 700, showGrid: true, zoom: 1 };
+
+  // items: back-to-front ordering (later = front)
+  // kinds: icon, text, image, shape, cable
+  let items = [];
+
+  // groups: gid => {name}
+  let groups = {};
+  let groupCounter = 1;
+
+  // selection
+  let selected = new Set(); // ids
+  let primaryId = null;
+
+  // drag
+  let drag = {
+    active: false,
+    mode: null,      // "move" | "vertex"
+    pointerId: null,
+    start: null,     // {x,y}
+    ids: [],
+    primaryId: null,
+    originals: null, // Map(id -> snapshot)
+    vertex: null,    // {id, index}
+  };
+
+  // cable tool
+  let cableTool = { on: false, draft: null };
+
+  // UI state
+  let ui = { groupCollapsed: {} };
+
+  // history
+  let history = { stack: [], index: -1, suspend: false, debounceTimer: null };
+
+  // ============================================================
+  // LIBRARY RENDER
+  // ============================================================
+  function renderLibrary(filter = "") {
+    const q = filter.trim().toLowerCase();
+    els.libgrid.innerHTML = "";
+    LIB_ITEMS
+      .filter(i => !q || i.name.toLowerCase().includes(q) || i.id.toLowerCase().includes(q))
+      .forEach(lib => {
+        const card = document.createElement("div");
+        card.className = "sp-card";
+        card.innerHTML = `
+          <div class="sp-thumb">${lib.svg}</div>
+          <div class="sp-name">${escapeHtml(lib.name)}</div>
+        `;
+        card.addEventListener("click", () => { addFromLibrary(lib); root.focus(); });
+        els.libgrid.appendChild(card);
+      });
+  }
+
+  // ============================================================
+  // CREATE ITEMS
+  // ============================================================
+  function normalizeItem(it) {
+    const base = { locked: !!it.locked, groupId: it.groupId || null };
+
+    if (it.kind === "icon") {
+      return {
+        ...base,
+        ...it,
+        kind: "icon",
+        x: num(it.x, stage.w / 2),
+        y: num(it.y, stage.h / 2),
+        r: num(it.r, 0),
+        s: clampf(num(it.s, 1), 0.2, 8),
+        color: it.color || defaultIconColor(it.iconId || it.id || "icon"),
+        label: it.label || "",
+        labelSize: clampf(num(it.labelSize, 14), 8, 72),
+        labelColor: it.labelColor || "#111111",
+      };
+    }
+
+    if (it.kind === "shape") {
+      return {
+        ...base,
+        ...it,
+        kind: "shape",
+        shape: it.shape === "circle" ? "circle" : "rect",
+        x: num(it.x, stage.w / 2),
+        y: num(it.y, stage.h / 2),
+        r: num(it.r, 0),
+        s: clampf(num(it.s, 1), 0.2, 8),
+        w: clampf(num(it.w, 200), 20, 4000),
+        h: clampf(num(it.h, 200), 20, 4000),
+        stroke: it.stroke || "#111111",
+        strokeWidth: clampf(num(it.strokeWidth, 4), 1, 30),
+        fill: (it.fill === undefined || it.fill === null) ? "none" : it.fill,
+        fillOpacity: clampf(num(it.fillOpacity, 1), 0, 1),
+        label: it.label || "",
+        labelSize: clampf(num(it.labelSize, 14), 8, 72),
+        labelColor: it.labelColor || "#111111",
+      };
+    }
+
+    if (it.kind === "text") {
+      return {
+        ...base,
+        ...it,
+        kind: "text",
+        x: num(it.x, stage.w / 2),
+        y: num(it.y, stage.h / 2),
+        r: num(it.r, 0),
+        s: clampf(num(it.s, 1), 0.2, 8),
+        text: it.text || "Text",
+        fontSize: clampf(num(it.fontSize, 24), 8, 200),
+        color: it.color || "#111111",
+      };
+    }
+
+    if (it.kind === "image") {
+      return {
+        ...base,
+        ...it,
+        kind: "image",
+        x: num(it.x, stage.w / 2),
+        y: num(it.y, stage.h / 2),
+        r: num(it.r, 0),
+        s: clampf(num(it.s, 1), 0.2, 8),
+        href: it.href || "",
+        name: it.name || "Image",
+        iw: clampf(num(it.iw, 220), 30, 4000),
+        ih: clampf(num(it.ih, 220), 30, 4000),
+        label: it.label || "",
+        labelSize: clampf(num(it.labelSize, 14), 8, 72),
+        labelColor: it.labelColor || "#111111",
+      };
+    }
+
+    if (it.kind === "cable") {
+      return {
+        ...base,
+        ...it,
+        kind: "cable",
+        points: Array.isArray(it.points) ? it.points.map(p => ({ x: num(p.x, 0), y: num(p.y, 0) })) : [],
+        color: it.color || "#111111",
+        width: clampf(num(it.width, 3), 1, 20),
+      };
+    }
+
+    return it;
+  }
+
+  function addFromLibrary(lib) {
+    if (lib.type === "text") { addTextItem(); return; }
+    if (lib.type === "shape") { addShapeItem(lib.shape, lib.name, lib.defW, lib.defH); return; }
+    if (lib.type === "icon") { addIconItem(lib); return; }
+  }
+
+  function addIconItem(libIcon) {
+    const id = uid();
+    const it = normalizeItem({
+      id,
+      kind: "icon",
+      iconId: libIcon.id,
+      name: libIcon.name,
+      x: stage.w / 2,
+      y: stage.h / 2,
+      r: 0,
+      s: libIcon.defS ?? 1,
+      locked: false,
+      color: defaultIconColor(libIcon.id),
+      label: "",
+      labelSize: 14,
+      labelColor: "#111111",
+    });
+    items.push(it);
+    selectOnly([id]);
+    pushHistory("add icon");
+    draw();
+  }
+
+  function addShapeItem(shape, name, w = 200, h = 200) {
+    const id = uid();
+    const it = normalizeItem({
+      id,
+      kind: "shape",
+      shape: shape === "circle" ? "circle" : "rect",
+      name,
+      x: stage.w / 2,
+      y: stage.h / 2,
+      r: 0,
+      s: 1,
+      w,
+      h,
+      stroke: "#111111",
+      strokeWidth: 4,
+      fill: "none",
+      fillOpacity: 1,
+      locked: false,
+      label: "",
+      labelSize: 14,
+      labelColor: "#111111",
+    });
+    items.push(it);
+    selectOnly([id]);
+    pushHistory("add shape");
+    draw();
+  }
+
+  function addTextItem() {
+    const id = uid();
+    const it = normalizeItem({
+      id,
+      kind: "text",
+      name: "Text",
+      x: stage.w / 2,
+      y: stage.h / 2,
+      r: 0,
+      s: 1,
+      text: "Text",
+      fontSize: 24,
+      color: "#111111",
+      locked: false,
+    });
+    items.push(it);
+    selectOnly([id]);
+    pushHistory("add text");
+    draw();
+  }
+
+  function addImageItem(dataUrl, fileName = "Image") {
+    const id = uid();
+    const it = normalizeItem({
+      id,
+      kind: "image",
+      name: fileName,
+      x: stage.w / 2,
+      y: stage.h / 2,
+      r: 0,
+      s: 1,
+      href: dataUrl,
+      iw: 220,
+      ih: 220,
+      locked: false,
+      label: "",
+      labelSize: 14,
+      labelColor: "#111111",
+    });
+    items.push(it);
+    selectOnly([id]);
+    pushHistory("add image");
+    draw();
+  }
+
+  function addCableFromDraft() {
+    if (!cableTool.draft || cableTool.draft.points.length < 2) return;
+    const id = uid();
+    const it = normalizeItem({
+      id,
+      kind: "cable",
+      name: "Cable",
+      points: cableTool.draft.points.map(p => ({ x: p.x, y: p.y })),
+      color: cableTool.draft.color,
+      width: cableTool.draft.width,
+      locked: false,
+      groupId: null,
+    });
+    items.push(it);
+    cableTool.draft = null;
+    selectOnly([id]);
+    pushHistory("add cable");
+    draw();
+  }
+
+  // ============================================================
+  // SELECTION
+  // ============================================================
+  function isSelected(id) { return selected.has(id); }
+
+  function getSelectedIds() { return Array.from(selected); }
+
+  function getSelectedItems() {
+    const ids = selected;
+    return items.filter(x => ids.has(x.id));
+  }
+
+  function getItemById(id) { return items.find(x => x.id === id) || null; }
+
+  function groupMembers(gid) { return items.filter(it => it.groupId === gid).map(it => it.id); }
+
+  function selectOnly(ids) {
+    selected = new Set(ids);
+    primaryId = ids.length ? ids[0] : null;
+    updateInspector();
+    drawSelectionOverlay();
+    renderLayers();
+    updateStatus();
+  }
+
+  function toggleSelectionIds(ids, primary = null) {
+    let allSelected = true;
+    for (const id of ids) if (!selected.has(id)) { allSelected = false; break; }
+    if (allSelected) {
+      for (const id of ids) selected.delete(id);
+    } else {
+      for (const id of ids) selected.add(id);
+    }
+    primaryId = primary || (selected.size ? Array.from(selected)[0] : null);
+    updateInspector();
+    drawSelectionOverlay();
+    renderLayers();
+    updateStatus();
+  }
+
+  function clearSelection() {
+    selected.clear();
+    primaryId = null;
+    drag.active = false;
+    els.selection.setAttribute("visibility", "hidden");
+    els.verts.innerHTML = "";
+    updateInspector();
+    renderLayers();
+    updateStatus();
+  }
+
+  function selectFromClick(id, opts = {}) {
+    const it = getItemById(id);
+    if (!it) return;
+
+    // Locked items are not selectable on canvas (layers menu can still select/unlock)
+    if (opts.fromCanvas && it.locked) return;
+
+    const ids = it.groupId ? groupMembers(it.groupId) : [id];
+    if (opts.shift) {
+      toggleSelectionIds(ids, id);
+    } else {
+      selectOnly(ids);
+      primaryId = id;
+    }
+  }
+
+  // ============================================================
+  // STAGE SIZE / GRID / ZOOM
+  // ============================================================
+  function clampStage(n) { return clampf(n, 300, 6000); }
+
+  function setStageSizePx(wPx, hPx) {
+    stage.w = clampStage(wPx);
+    stage.h = clampStage(hPx);
+    // Clamp items into stage bounds
+    for (const it of items) {
+      if (it.kind === "cable") {
+        for (const p of it.points) {
+          p.x = clampf(p.x, 0, stage.w);
+          p.y = clampf(p.y, 0, stage.h);
+        }
+      } else {
+        it.x = clampf(it.x, 0, stage.w);
+        it.y = clampf(it.y, 0, stage.h);
+      }
+    }
+    draw();
+  }
+
+  function setStageFromInputs() {
+    const wUnits = clampf(parseFloat(els.w.value || "40"), 1, 9999);
+    const hUnits = clampf(parseFloat(els.h.value || "23"), 1, 9999);
+    setStageSizePx(unitsToPx(wUnits), unitsToPx(hUnits));
+    pushHistory("resize stage");
+  }
+
+  function applyZoom() {
+    const z = stage.zoom;
+    els.svg.style.width = (100 * z) + "%";
+  }
+
+  function gridStepPx() {
+    const gsUnits = clampf(parseFloat(els.gridSize.value || "1"), 0.1, 1000);
+    return unitsToPx(gsUnits);
+  }
+
+  // ============================================================
+  // DRAW
+  // ============================================================
+  function draw() {
+    // viewBox
+    els.svg.setAttribute("viewBox", `0 0 ${stage.w} ${stage.h}`);
+    document.getElementById("sp-bg").setAttribute("width", stage.w);
+    document.getElementById("sp-bg").setAttribute("height", stage.h);
+    els.gridRect.setAttribute("width", stage.w);
+    els.gridRect.setAttribute("height", stage.h);
+
+    // grid
+    const gs = gridStepPx();
+    els.gridPattern.setAttribute("width", gs);
+    els.gridPattern.setAttribute("height", gs);
+    const path = els.gridPattern.querySelector("path");
+    if (path) path.setAttribute("d", `M ${gs} 0 L 0 0 0 ${gs}`);
+    els.gridRect.style.display = stage.showGrid ? "block" : "none";
+
+    // items
+    els.items.innerHTML = "";
+    for (const it0 of items) {
+      const it = normalizeItem(it0);
+      // normalize in-place for safety
+      Object.assign(it0, it);
+
+      if (it.kind === "cable") els.items.appendChild(renderCable(it));
+      else if (it.kind === "text") els.items.appendChild(renderText(it));
+      else if (it.kind === "image") els.items.appendChild(renderImage(it));
+      else if (it.kind === "shape") els.items.appendChild(renderShape(it));
+      else els.items.appendChild(renderIcon(it));
+    }
+
+    drawCableDraft();
+    drawSelectionOverlay();
+    renderLayers();
+    updateStatus();
+    applyZoom();
+
+    // pointer-events behavior
+    // - locked items are not clickable (pass-through)
+    // - cable tool ignores all items
+    if (cableTool.on) els.items.style.pointerEvents = "none";
+    else els.items.style.pointerEvents = "auto";
+  }
+
+  function labelYFor(it) {
+    const size = clampf(num(it.labelSize, 14), 8, 72);
+    let halfH = 40 * (it.s || 1);
+    if (it.kind === "shape") halfH = (it.h * (it.s || 1)) / 2;
+    if (it.kind === "image") halfH = (it.ih * (it.s || 1)) / 2;
+    return it.y + halfH + size * 0.9 + 6;
+  }
+
+  function renderLabel(it) {
+    if (!it.label) return "";
+    const size = clampf(num(it.labelSize, 14), 8, 72);
+    const color = it.labelColor || "#111111";
+    const y = labelYFor(it);
+    return `<text x="${it.x}" y="${y}" text-anchor="middle" font-size="${size}"
+                 fill="${escapeAttr(color)}" pointer-events="none">${escapeXml(it.label)}</text>`;
+  }
+
+  function renderIcon(it) {
+    const g = svgEl("g");
+    g.setAttribute("data-id", it.id);
+    g.setAttribute("filter", "url(#sp-shadow)");
+    g.style.cursor = it.locked ? "default" : "grab";
+    g.style.opacity = it.locked ? "0.85" : "1";
+    g.style.pointerEvents = it.locked ? "none" : "auto";
+
+    const lib = findLibById(it.iconId);
+    const groupSvg = lib && lib.svgGroup ? lib.svgGroup : makeTintableSvgGroup(baseBox("?"));
+
+    const hit = `<rect x="-60" y="-60" width="120" height="120" fill="transparent"/>`;
+
+    g.innerHTML = `
+      <g transform="translate(${it.x} ${it.y}) rotate(${it.r}) scale(${it.s})" style="color:${escapeAttr(it.color || defaultIconColor(it.iconId || ""))}">
+        ${hit}
+        <g transform="translate(-35 -35)">
+          ${groupSvg}
+        </g>
+      </g>
+      ${renderLabel(it)}
+    `;
+
+    g.addEventListener("pointerdown", (e) => onItemPointerDown(e, it.id));
+    return g;
+  }
+
+  function renderShape(it) {
+    const g = svgEl("g");
+    g.setAttribute("data-id", it.id);
+    g.setAttribute("filter", "url(#sp-shadow)");
+    g.style.cursor = it.locked ? "default" : "grab";
+    g.style.opacity = it.locked ? "0.85" : "1";
+    g.style.pointerEvents = it.locked ? "none" : "auto";
+
+    const hit = `<rect x="${-it.w/2 - 24}" y="${-it.h/2 - 24}" width="${it.w + 48}" height="${it.h + 48}" fill="transparent"/>`;
+
+    const fillAttr = (it.fill && it.fill !== "none") ? `fill="${escapeAttr(it.fill)}" fill-opacity="${clampf(num(it.fillOpacity,1),0,1)}"` : `fill="none"`;
+    const strokeAttr = `stroke="${escapeAttr(it.stroke || "#111111")}" stroke-width="${clampf(num(it.strokeWidth,4),1,30)}"`;
+
+    const shapeEl = it.shape === "circle"
+      ? `<ellipse cx="0" cy="0" rx="${it.w/2}" ry="${it.h/2}" ${fillAttr} ${strokeAttr} />`
+      : `<rect x="${-it.w/2}" y="${-it.h/2}" width="${it.w}" height="${it.h}" rx="${Math.min(16, it.w/8, it.h/8)}" ${fillAttr} ${strokeAttr} />`;
+
+    g.innerHTML = `
+      <g transform="translate(${it.x} ${it.y}) rotate(${it.r}) scale(${it.s})">
+        ${hit}
+        ${shapeEl}
+      </g>
+      ${renderLabel(it)}
+    `;
+
+    g.addEventListener("pointerdown", (e) => onItemPointerDown(e, it.id));
+    return g;
+  }
+
+  function renderText(it) {
+    const g = svgEl("g");
+    g.setAttribute("data-id", it.id);
+    g.style.cursor = it.locked ? "default" : "grab";
+    g.style.opacity = it.locked ? "0.85" : "1";
+    g.style.pointerEvents = it.locked ? "none" : "auto";
+
+    const hit = `<rect x="-160" y="-50" width="320" height="100" fill="transparent"/>`;
+
+    g.innerHTML = `
+      <g transform="translate(${it.x} ${it.y}) rotate(${it.r}) scale(${it.s})">
+        ${hit}
+        <text x="0" y="0" text-anchor="middle" dominant-baseline="middle"
+              font-size="${it.fontSize}" fill="${escapeAttr(it.color || "#111111")}">${escapeXml(it.text || "")}</text>
+      </g>
+    `;
+
+    g.addEventListener("pointerdown", (e) => onItemPointerDown(e, it.id));
+    return g;
+  }
+
+  function renderImage(it) {
+    const g = svgEl("g");
+    g.setAttribute("data-id", it.id);
+    g.style.cursor = it.locked ? "default" : "grab";
+    g.style.opacity = it.locked ? "0.85" : "1";
+    g.style.pointerEvents = it.locked ? "none" : "auto";
+
+    const w = it.iw, h = it.ih;
+
+    g.innerHTML = `
+      <g transform="translate(${it.x} ${it.y}) rotate(${it.r}) scale(${it.s})">
+        <rect x="${-w/2 - 20}" y="${-h/2 - 20}" width="${w+40}" height="${h+40}" fill="transparent"/>
+        <image href="${it.href}" x="${-w/2}" y="${-h/2}" width="${w}" height="${h}" preserveAspectRatio="xMidYMid meet"/>
+        <rect x="${-w/2}" y="${-h/2}" width="${w}" height="${h}" fill="none" stroke="rgba(0,0,0,0.18)" />
+      </g>
+      ${renderLabel(it)}
+    `;
+
+    g.addEventListener("pointerdown", (e) => onItemPointerDown(e, it.id));
+    return g;
+  }
+
+  function renderCable(it) {
+    const g = svgEl("g");
+    g.setAttribute("data-id", it.id);
+    g.style.cursor = it.locked ? "default" : "grab";
+    g.style.opacity = it.locked ? "0.85" : "1";
+    g.style.pointerEvents = it.locked ? "none" : "auto";
+
+    const pts = it.points.map(p => `${p.x},${p.y}`).join(" ");
+    const fat = Math.max(14, it.width * 5);
+    g.innerHTML = `
+      <polyline points="${pts}" fill="none" stroke="transparent" stroke-width="${fat}" stroke-linecap="round" stroke-linejoin="round"/>
+      <polyline points="${pts}" fill="none" stroke="${escapeAttr(it.color)}" stroke-width="${it.width}" stroke-linecap="round" stroke-linejoin="round"/>
+    `;
+    g.addEventListener("pointerdown", (e) => onItemPointerDown(e, it.id));
+    return g;
+  }
+
+  // ============================================================
+  // SELECTION OVERLAY (accurate bbox)
+  // ============================================================
+  function getRenderedEl(id) {
+    try {
+      return els.items.querySelector(`[data-id="${cssEscape(id)}"]`);
+    } catch (_) {
+      return els.items.querySelector(`[data-id="${id.replace(/"/g, '\\"')}"]`);
+    }
+  }
+
+  function getTransformedBBox(el) {
+    try {
+      const bb = el.getBBox();
+
+      // Convert bbox corners into SVG user units reliably (handles viewBox/CSS zoom)
+      const elM = el.getScreenCTM ? el.getScreenCTM() : null;
+      const svgM = els.svg && els.svg.getScreenCTM ? els.svg.getScreenCTM() : null;
+
+      // Fallback: bb is already in SVG user units in most cases
+      if (!elM || !svgM) return { x: bb.x, y: bb.y, width: bb.width, height: bb.height };
+
+      const inv = svgM.inverse();
+
+      const cornersScreen = [
+        transformPoint(bb.x, bb.y, elM),
+        transformPoint(bb.x + bb.width, bb.y, elM),
+        transformPoint(bb.x, bb.y + bb.height, elM),
+        transformPoint(bb.x + bb.width, bb.y + bb.height, elM),
+      ];
+      const corners = cornersScreen.map(p => transformPoint(p.x, p.y, inv));
+
+      const xs = corners.map(p => p.x);
+      const ys = corners.map(p => p.y);
+      const minX = Math.min(...xs), maxX = Math.max(...xs);
+      const minY = Math.min(...ys), maxY = Math.max(...ys);
+      return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+    } catch (_) {
+      return null;
+    }
+  }
+
+
+  function drawSelectionOverlay() {
+    els.verts.innerHTML = "";
+
+    if (selected.size === 0) {
+      els.selection.setAttribute("visibility","hidden");
+      return;
+    }
+
+    const ids = getSelectedIds();
+
+    // If exactly one cable selected: show vertices, hide bbox
+    if (ids.length === 1) {
+      const it = getItemById(ids[0]);
+      if (it && it.kind === "cable") {
+        els.selection.setAttribute("visibility","hidden");
+        it.points.forEach((p, idx) => {
+          const c = svgEl("circle");
+          c.setAttribute("cx", p.x);
+          c.setAttribute("cy", p.y);
+          c.setAttribute("r", 7);
+          c.setAttribute("fill", "rgba(0,120,255,0.95)");
+          c.setAttribute("stroke", "white");
+          c.setAttribute("stroke-width", "2");
+          c.style.cursor = it.locked || cableTool.on ? "default" : "move";
+          c.style.pointerEvents = (it.locked || cableTool.on) ? "none" : "auto";
+          c.addEventListener("pointerdown", (e) => onVertexPointerDown(e, it.id, idx));
+          els.verts.appendChild(c);
+        });
+        return;
+      }
+    }
+
+    // Multi or non-cable: show union bbox
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const id of ids) {
+      const el = getRenderedEl(id);
+      if (!el) continue;
+      const bb = getTransformedBBox(el);
+      if (!bb) continue;
+      minX = Math.min(minX, bb.x);
+      minY = Math.min(minY, bb.y);
+      maxX = Math.max(maxX, bb.x + bb.width);
+      maxY = Math.max(maxY, bb.y + bb.height);
+    }
+
+    if (!isFinite(minX) || !isFinite(minY) || !isFinite(maxX) || !isFinite(maxY)) {
+      els.selection.setAttribute("visibility","hidden");
+      return;
+    }
+
+    const pad = 6;
+    els.selRect.setAttribute("x", minX - pad);
+    els.selRect.setAttribute("y", minY - pad);
+    els.selRect.setAttribute("width", (maxX - minX) + pad * 2);
+    els.selRect.setAttribute("height", (maxY - minY) + pad * 2);
+    els.selection.setAttribute("visibility","visible");
+  }
+
+  // ============================================================
+  // STATUS
+  // ============================================================
+  function updateStatus() {
+    const ids = getSelectedIds();
+    if (ids.length === 0) {
+      els.status.textContent = "No selection";
+      return;
+    }
+    if (ids.length > 1) {
+      const locked = getSelectedItems().every(it => !!it.locked);
+      els.status.textContent = `Selected: ${ids.length} items • ${locked ? "Locked" : "Unlocked"}`;
+      return;
+    }
+    const it = getItemById(ids[0]);
+    if (!it) { els.status.textContent = "No selection"; return; }
+    if (it.kind === "cable") {
+      els.status.textContent = `Cable • points:${it.points.length} • width:${it.width} • ${it.locked ? "Locked" : "Unlocked"}`;
+      return;
+    }
+    els.status.textContent = `${it.name || it.kind} • x:${Math.round(it.x)} y:${Math.round(it.y)} • r:${Math.round(it.r||0)}° • s:${round2(it.s||1)} • ${it.locked ? "Locked" : "Unlocked"}`;
+  }
+
+  // ============================================================
+  // INSPECTOR
+  // ============================================================
+  function updateInspector() {
+    const ids = getSelectedIds();
+
+    // buttons enabled state
+    const hasSel = ids.length > 0;
+    if (els.deleteBtn) els.deleteBtn.disabled = !hasSel;
+    if (els.lockBtn) els.lockBtn.disabled = !hasSel;
+    if (els.duplicateBtn) els.duplicateBtn.disabled = !hasSel;
+    if (els.groupBtn) els.groupBtn.disabled = ids.length < 2;
+    if (els.ungroupBtn) els.ungroupBtn.disabled = !hasSel;
+
+    if (!hasSel) {
+      els.inspectorFields.innerHTML = "";
+      if (els.lockBtn) {
+        els.lockBtn.setAttribute("aria-pressed","false");
+        els.lockBtn.textContent = "Lock";
+      }
+      return;
+    }
+
+    const selectedItems = getSelectedItems();
+
+    // Multi-selection inspector
+    if (ids.length > 1) {
+      const allLocked = selectedItems.every(it => !!it.locked);
+      if (els.lockBtn) {
+        els.lockBtn.setAttribute("aria-pressed", allLocked ? "true" : "false");
+        els.lockBtn.textContent = allLocked ? "Unlock" : "Lock";
+      }
+
+      // If all share same groupId, show group name + rename
+      const gid = selectedItems[0].groupId;
+      const sameGroup = gid && selectedItems.every(it => it.groupId === gid);
+      const name = sameGroup ? (groups[gid]?.name || "Group") : "";
+
+      els.inspectorFields.innerHTML = `
+        <div class="sp-field">
+          <div>${sameGroup ? "Group" : "Multiple selection"}</div>
+          <div class="sp-muted">${sameGroup ? escapeHtml(name) : `${ids.length} items selected`}</div>
+        </div>
+        ${sameGroup ? `
+        <div class="sp-field">
+          <div>Group name</div>
+          <input id="sp-f-gname" value="${escapeAttr(name)}" />
+        </div>` : ``}
+      `;
+
+      if (sameGroup) {
+        const gname = document.getElementById("sp-f-gname");
+        gname.addEventListener("input", (e) => {
+          groups[gid] = groups[gid] || { name: "Group" };
+          groups[gid].name = e.target.value || "Group";
+          draw();
+          debounceHistory("rename group");
+        });
+      }
+      return;
+    }
+
+    // Single selection inspector
+    const it = selectedItems[0];
+    if (!it) return;
+
+    if (els.lockBtn) {
+      els.lockBtn.setAttribute("aria-pressed", it.locked ? "true" : "false");
+      els.lockBtn.textContent = it.locked ? "Unlock" : "Lock";
+    }
+
+    if (it.kind === "icon") {
+      els.inspectorFields.innerHTML = `
+        <div class="sp-field">
+          <div>Label</div>
+          <div class="sp-inline">
+            <input id="sp-f-label" placeholder="e.g., Vox 1" value="${escapeAttr(it.label || "")}"/>
+            <label>Size <input id="sp-f-labelSize" type="number" min="8" max="72" step="1" value="${Math.round(it.labelSize||14)}"/></label>
+            <label>Color <input id="sp-f-labelColor" type="color" value="${toColorInput(it.labelColor || "#111111")}"/></label>
+          </div>
+        </div>
+
+        <div class="sp-field">
+          <div>Icon color</div>
+          <input id="sp-f-color" type="color" value="${toColorInput(it.color || "#111111")}"/>
+        </div>
+
+        <div class="sp-field">
+          <div class="sp-inline">
+            <label>Scale <input id="sp-f-scale" type="number" step="0.05" min="0.2" max="8" value="${round2(it.s||1)}"/></label>
+            <label>Rotate <input id="sp-f-rot" type="number" step="1" value="${Math.round(it.r||0)}"/></label>
+          </div>
+        </div>
+      `;
+      hookCommonTransforms(it);
+      hookLabelFields(it);
+      const color = document.getElementById("sp-f-color");
+      color.addEventListener("input", (e) => { it.color = e.target.value; draw(); debounceHistory("icon color"); });
+      return;
+    }
+
+    if (it.kind === "shape") {
+      const fillOn = (it.fill && it.fill !== "none");
+      els.inspectorFields.innerHTML = `
+        <div class="sp-field">
+          <div>Label</div>
+          <div class="sp-inline">
+            <input id="sp-f-label" placeholder="optional" value="${escapeAttr(it.label || "")}"/>
+            <label>Size <input id="sp-f-labelSize" type="number" min="8" max="72" step="1" value="${Math.round(it.labelSize||14)}"/></label>
+            <label>Color <input id="sp-f-labelColor" type="color" value="${toColorInput(it.labelColor || "#111111")}"/></label>
+          </div>
+        </div>
+
+        <div class="sp-field">
+          <div class="sp-inline">
+            <label>Stroke <input id="sp-f-stroke" type="color" value="${toColorInput(it.stroke || "#111111")}"/></label>
+            <label>Width <input id="sp-f-strokeW" type="number" min="1" max="30" step="1" value="${Math.round(it.strokeWidth||4)}"/></label>
+          </div>
+        </div>
+
+        <div class="sp-field">
+          <div class="sp-inline">
+            <label><input id="sp-f-fillOn" type="checkbox" ${fillOn ? "checked":""}/> Fill</label>
+            <input id="sp-f-fill" type="color" value="${toColorInput(fillOn ? it.fill : "#ffffff")}"/>
+            <label>Opacity <input id="sp-f-fillOp" type="number" min="0" max="1" step="0.05" value="${round2(it.fillOpacity ?? 1)}"/></label>
+          </div>
+        </div>
+
+        <div class="sp-field">
+          <div class="sp-inline">
+            <label>W <input id="sp-f-w" type="number" min="20" max="4000" step="10" value="${Math.round(it.w||200)}"/></label>
+            <label>H <input id="sp-f-h" type="number" min="20" max="4000" step="10" value="${Math.round(it.h||200)}"/></label>
+          </div>
+        </div>
+
+        <div class="sp-field">
+          <div class="sp-inline">
+            <label>Scale <input id="sp-f-scale" type="number" step="0.05" min="0.2" max="8" value="${round2(it.s||1)}"/></label>
+            <label>Rotate <input id="sp-f-rot" type="number" step="1" value="${Math.round(it.r||0)}"/></label>
+          </div>
+        </div>
+      `;
+
+      hookCommonTransforms(it);
+      hookLabelFields(it);
+
+      document.getElementById("sp-f-stroke").addEventListener("input", (e) => { it.stroke = e.target.value; draw(); debounceHistory("shape stroke"); });
+      document.getElementById("sp-f-strokeW").addEventListener("input", (e) => { it.strokeWidth = clampf(parseFloat(e.target.value||"4"),1,30); draw(); debounceHistory("shape stroke width"); });
+
+      const fillOnEl = document.getElementById("sp-f-fillOn");
+      const fillEl = document.getElementById("sp-f-fill");
+      const fillOpEl = document.getElementById("sp-f-fillOp");
+
+      fillOnEl.addEventListener("change", () => {
+        if (fillOnEl.checked) it.fill = fillEl.value;
+        else it.fill = "none";
+        draw();
+        pushHistory("shape fill toggle");
+      });
+      fillEl.addEventListener("input", (e) => {
+        if (fillOnEl.checked) it.fill = e.target.value;
+        draw();
+        debounceHistory("shape fill color");
+      });
+      fillOpEl.addEventListener("input", (e) => {
+        it.fillOpacity = clampf(parseFloat(e.target.value||"1"), 0, 1);
+        draw();
+        debounceHistory("shape fill opacity");
+      });
+
+      document.getElementById("sp-f-w").addEventListener("input", (e) => { it.w = clampf(parseFloat(e.target.value||"200"), 20, 4000); draw(); debounceHistory("shape size"); });
+      document.getElementById("sp-f-h").addEventListener("input", (e) => { it.h = clampf(parseFloat(e.target.value||"200"), 20, 4000); draw(); debounceHistory("shape size"); });
+      return;
+    }
+
+    if (it.kind === "text") {
+      els.inspectorFields.innerHTML = `
+        <div class="sp-field">
+          <div>Text</div>
+          <textarea id="sp-f-text">${escapeHtml(it.text || "")}</textarea>
+        </div>
+
+        <div class="sp-field">
+          <div class="sp-inline">
+            <label>Color <input id="sp-f-color" type="color" value="${toColorInput(it.color || "#111111")}"/></label>
+            <label>Size <input id="sp-f-font" type="number" step="1" min="8" max="200" value="${Math.round(it.fontSize||24)}"/></label>
+          </div>
+        </div>
+
+        <div class="sp-field">
+          <div class="sp-inline">
+            <label>Scale <input id="sp-f-scale" type="number" step="0.05" min="0.2" max="8" value="${round2(it.s||1)}"/></label>
+            <label>Rotate <input id="sp-f-rot" type="number" step="1" value="${Math.round(it.r||0)}"/></label>
+          </div>
+        </div>
+      `;
+
+      document.getElementById("sp-f-text").addEventListener("input", (e) => { it.text = e.target.value; draw(); debounceHistory("text"); });
+      document.getElementById("sp-f-font").addEventListener("input", (e) => { it.fontSize = clampf(parseFloat(e.target.value||"24"), 8, 200); draw(); debounceHistory("text size"); });
+      document.getElementById("sp-f-color").addEventListener("input", (e) => { it.color = e.target.value; draw(); debounceHistory("text color"); });
+      hookCommonTransforms(it);
+      return;
+    }
+
+    if (it.kind === "image") {
+      els.inspectorFields.innerHTML = `
+        <div class="sp-field">
+          <div>Image</div>
+          <div class="sp-muted">${escapeHtml(it.name || "Image")}</div>
+        </div>
+
+        <div class="sp-field">
+          <div>Label</div>
+          <div class="sp-inline">
+            <input id="sp-f-label" placeholder="optional" value="${escapeAttr(it.label || "")}"/>
+            <label>Size <input id="sp-f-labelSize" type="number" min="8" max="72" step="1" value="${Math.round(it.labelSize||14)}"/></label>
+            <label>Color <input id="sp-f-labelColor" type="color" value="${toColorInput(it.labelColor || "#111111")}"/></label>
+          </div>
+        </div>
+
+        <div class="sp-field">
+          <div class="sp-inline">
+            <label>W <input id="sp-f-iw" type="number" step="10" min="30" max="4000" value="${Math.round(it.iw||220)}"/></label>
+            <label>H <input id="sp-f-ih" type="number" step="10" min="30" max="4000" value="${Math.round(it.ih||220)}"/></label>
+          </div>
+        </div>
+
+        <div class="sp-field">
+          <div class="sp-inline">
+            <label>Scale <input id="sp-f-scale" type="number" step="0.05" min="0.2" max="8" value="${round2(it.s||1)}"/></label>
+            <label>Rotate <input id="sp-f-rot" type="number" step="1" value="${Math.round(it.r||0)}"/></label>
+          </div>
+        </div>
+      `;
+
+      hookCommonTransforms(it);
+      hookLabelFields(it);
+
+      document.getElementById("sp-f-iw").addEventListener("input", (e) => { it.iw = clampf(parseFloat(e.target.value||"220"), 30, 4000); draw(); debounceHistory("image size"); });
+      document.getElementById("sp-f-ih").addEventListener("input", (e) => { it.ih = clampf(parseFloat(e.target.value||"220"), 30, 4000); draw(); debounceHistory("image size"); });
+      return;
+    }
+
+    if (it.kind === "cable") {
+      els.inspectorFields.innerHTML = `
+        <div class="sp-field">
+          <div class="sp-inline">
+            <label>Color <input id="sp-f-ccolor" type="color" value="${toColorInput(it.color || "#111111")}"/></label>
+            <label>Width <input id="sp-f-cwidth" type="number" min="1" max="20" value="${Math.round(it.width||3)}"/></label>
+          </div>
+          <div class="sp-muted">Edit shape by dragging blue vertices (tool Off).</div>
+        </div>
+      `;
+      document.getElementById("sp-f-ccolor").addEventListener("input", (e) => { it.color = e.target.value; draw(); debounceHistory("cable color"); });
+      document.getElementById("sp-f-cwidth").addEventListener("input", (e) => { it.width = clampf(parseFloat(e.target.value||"3"), 1, 20); draw(); debounceHistory("cable width"); });
+      return;
+    }
+  }
+
+  function hookCommonTransforms(it) {
+    const elScale = document.getElementById("sp-f-scale");
+    const elRot = document.getElementById("sp-f-rot");
+    if (elScale) elScale.addEventListener("input", (e) => { it.s = clampf(parseFloat(e.target.value||"1"), 0.2, 8); draw(); debounceHistory("scale"); });
+    if (elRot) elRot.addEventListener("input", (e) => { it.r = mod(parseFloat(e.target.value||"0"), 360); draw(); debounceHistory("rotate"); });
+  }
+
+  function hookLabelFields(it) {
+    const elLabel = document.getElementById("sp-f-label");
+    const elLS = document.getElementById("sp-f-labelSize");
+    const elLC = document.getElementById("sp-f-labelColor");
+    if (elLabel) elLabel.addEventListener("input", (e) => { it.label = e.target.value; draw(); debounceHistory("label"); });
+    if (elLS) elLS.addEventListener("input", (e) => { it.labelSize = clampf(parseFloat(e.target.value||"14"), 8, 72); draw(); debounceHistory("label size"); });
+    if (elLC) elLC.addEventListener("input", (e) => { it.labelColor = e.target.value; draw(); debounceHistory("label color"); });
+  }
+
+  // ============================================================
+  // LAYERS (with groups)
+  // ============================================================
+  function renderLayers() {
+    if (!els.layerList) return;
+    els.layerList.innerHTML = "";
+
+    // Iterate from front to back for display
+    for (let i = items.length - 1; i >= 0; ) {
+      const it = items[i];
+      if (it.groupId) {
+        const gid = it.groupId;
+        // find contiguous block
+        let start = i;
+        while (start - 1 >= 0 && items[start - 1].groupId === gid) start--;
+        let end = i;
+        while (end + 1 < items.length && items[end + 1].groupId === gid) end++;
+
+        const memberIds = items.slice(start, end + 1).map(x => x.id);
+        const allSel = memberIds.every(id => selected.has(id));
+        const anyLocked = items.slice(start, end + 1).some(x => x.locked);
+        const allLocked = items.slice(start, end + 1).every(x => x.locked);
+        const gname = groups[gid]?.name || `Group ${gid.slice(-4)}`;
+
+        const groupRow = document.createElement("div");
+        groupRow.className = "sp-layerRow sp-groupRow" + (allSel ? " selected" : "");
+        groupRow.innerHTML = `
+          <div class="sp-layerLeft">
+            <div class="sp-layerName">${escapeHtml(gname)}</div>
+            <div class="sp-layerMeta">group • ${end-start+1} items${anyLocked ? (allLocked ? " • locked" : " • mixed lock") : ""}</div>
+          </div>
+          <div class="sp-layerBtns">
+            <button class="sp-btn sp-mini" data-act="collapse">${ui.groupCollapsed[gid] ? "▸" : "▾"}</button>
+            <button class="sp-btn sp-mini" data-act="up">▲</button>
+            <button class="sp-btn sp-mini" data-act="down">▼</button>
+            <button class="sp-btn sp-mini" data-act="lock">${allLocked ? "🔒" : "🔓"}</button>
+            <button class="sp-btn sp-mini" data-act="dup">⧉</button>
+            <button class="sp-btn sp-mini" data-act="del">✕</button>
+          </div>
+        `;
+        groupRow.addEventListener("click", (e) => {
+          const btn = e.target.closest("button");
+          if (!btn) { selectOnly(memberIds); primaryId = memberIds[memberIds.length-1]; root.focus(); return; }
+          e.stopPropagation();
+          const act = btn.getAttribute("data-act");
+          if (act === "collapse") { ui.groupCollapsed[gid] = !ui.groupCollapsed[gid]; renderLayers(); return; }
+          if (act === "del") { deleteIds(memberIds); pushHistory("delete group"); draw(); return; }
+          if (act === "dup") { duplicateIds(memberIds, true); return; }
+          if (act === "lock") { setLockForIds(memberIds, !allLocked); pushHistory("lock group"); draw(); return; }
+          if (act === "up") { moveBlockForward(start, end); pushHistory("move group forward"); draw(); return; }
+          if (act === "down") { moveBlockBackward(start, end); pushHistory("move group backward"); draw(); return; }
+        });
+        els.layerList.appendChild(groupRow);
+
+        if (!ui.groupCollapsed[gid]) {
+          // children from front to back within block
+          for (let j = end; j >= start; j--) {
+            const child = items[j];
+            const childRow = document.createElement("div");
+            childRow.className = "sp-layerRow sp-childRow" + (selected.has(child.id) ? " selected" : "");
+            const label = layerLabel(child);
+            childRow.innerHTML = `
+              <div class="sp-layerLeft">
+                <div class="sp-layerName">— ${escapeHtml(label)}</div>
+                <div class="sp-layerMeta">${escapeHtml(child.kind)}${child.locked ? " • locked" : ""}</div>
+              </div>
+              <div class="sp-layerBtns">
+                <button class="sp-btn sp-mini" data-act="lock">${child.locked ? "🔒" : "🔓"}</button>
+                <button class="sp-btn sp-mini" data-act="del">✕</button>
+              </div>
+            `;
+            childRow.addEventListener("click", (e) => {
+              const btn = e.target.closest("button");
+              if (!btn) { selectOnly(memberIds); primaryId = child.id; root.focus(); return; }
+              e.stopPropagation();
+              const act = btn.getAttribute("data-act");
+              if (act === "del") { deleteIds([child.id]); pushHistory("delete"); draw(); return; }
+              if (act === "lock") { setLockForIds([child.id], !child.locked); pushHistory("lock"); draw(); return; }
+            });
+            els.layerList.appendChild(childRow);
+          }
+        }
+
+        i = start - 1;
+      } else {
+        const row = document.createElement("div");
+        row.className = "sp-layerRow" + (selected.has(it.id) ? " selected" : "");
+        row.innerHTML = `
+          <div class="sp-layerLeft">
+            <div class="sp-layerName">${escapeHtml(layerLabel(it))}</div>
+            <div class="sp-layerMeta">${escapeHtml(it.kind)}${it.locked ? " • locked" : ""}</div>
+          </div>
+          <div class="sp-layerBtns">
+            <button class="sp-btn sp-mini" data-act="up">▲</button>
+            <button class="sp-btn sp-mini" data-act="down">▼</button>
+            <button class="sp-btn sp-mini" data-act="lock">${it.locked ? "🔒" : "🔓"}</button>
+            <button class="sp-btn sp-mini" data-act="dup">⧉</button>
+            <button class="sp-btn sp-mini" data-act="del">✕</button>
+          </div>
+        `;
+
+        row.addEventListener("click", (e) => {
+          const btn = e.target.closest("button");
+          if (!btn) { selectFromClick(it.id, { shift: e.shiftKey, fromCanvas: false }); root.focus(); return; }
+          e.stopPropagation();
+          const act = btn.getAttribute("data-act");
+          const idx = items.findIndex(x => x.id === it.id);
+          if (act === "del") { deleteIds([it.id]); pushHistory("delete"); draw(); return; }
+          if (act === "dup") { duplicateIds([it.id], false); return; }
+          if (act === "lock") { setLockForIds([it.id], !it.locked); pushHistory("lock"); draw(); return; }
+          if (act === "up") { moveOneForward([it.id]); pushHistory("bring forward"); draw(); return; }
+          if (act === "down") { moveOneBackward([it.id]); pushHistory("send back"); draw(); return; }
+        });
+
+        els.layerList.appendChild(row);
+        i--;
+      }
+    }
+  }
+
+  function layerLabel(it) {
+    if (it.kind === "icon") return it.label ? `${it.name} — ${it.label}` : it.name;
+    if (it.kind === "text") return it.text ? `Text — ${it.text}` : "Text";
+    if (it.kind === "image") return `Image — ${it.name || "Image"}`;
+    if (it.kind === "shape") return it.label ? `${it.name} — ${it.label}` : it.name;
+    return "Cable";
+  }
+
+  // ============================================================
+  // POINTER INTERACTIONS
+  // ============================================================
+  function onItemPointerDown(e, id) {
+    if (cableTool.on) return; // cable tool ignores items
+    e.preventDefault();
+    e.stopPropagation();
+    root.focus();
+
+    selectFromClick(id, { shift: e.shiftKey, fromCanvas: true });
+
+    // Start drag only if the clicked item is currently selected
+    if (!selected.has(id)) return;
+
+    const idsToDrag = getSelectedIds();
+    if (idsToDrag.length === 0) return;
+
+    // If any selected is locked, don't drag (and locked ones are not clickable anyway)
+    if (idsToDrag.some(xid => (getItemById(xid)?.locked))) return;
+
+    const p0 = svgPointFromEvent(e);
+    drag.active = true;
+    drag.mode = "move";
+    drag.pointerId = e.pointerId;
+    drag.start = p0;
+    drag.ids = idsToDrag.slice();
+    drag.primaryId = id;
+    drag.originals = new Map();
+    for (const xid of drag.ids) {
+      const it = getItemById(xid);
+      if (!it) continue;
+      drag.originals.set(xid, deepClone(it));
+    }
+
+    els.svg.setPointerCapture(e.pointerId);
+  }
+
+  function onVertexPointerDown(e, cableId, vIndex) {
+    if (cableTool.on) return;
+    e.preventDefault();
+    e.stopPropagation();
+    root.focus();
+
+    selectOnly([cableId]);
+    const it = getItemById(cableId);
+    if (!it || it.locked) return;
+
+    const p0 = svgPointFromEvent(e);
+    drag.active = true;
+    drag.mode = "vertex";
+    drag.pointerId = e.pointerId;
+    drag.start = p0;
+    drag.vertex = { id: cableId, index: vIndex };
+    drag.originals = new Map([[cableId, deepClone(it)]]);
+
+    els.svg.setPointerCapture(e.pointerId);
+  }
+
+  function onPointerMove(e) {
+    if (!drag.active) return;
+
+    const p = svgPointFromEvent(e);
+
+    if (drag.mode === "vertex" && drag.vertex) {
+      const it = getItemById(drag.vertex.id);
+      const orig = drag.originals.get(drag.vertex.id);
+      if (!it || !orig) return;
+
+      const dx = p.x - drag.start.x;
+      const dy = p.y - drag.start.y;
+      let nx = orig.points[drag.vertex.index].x + dx;
+      let ny = orig.points[drag.vertex.index].y + dy;
+
+      const snapped = snapPoint({ x: nx, y: ny });
+      it.points[drag.vertex.index] = snapped;
+      draw();
+      return;
+    }
+
+    if (drag.mode === "move") {
+      const origPrimary = drag.originals.get(drag.primaryId);
+      if (!origPrimary) return;
+
+      let dx = p.x - drag.start.x;
+      let dy = p.y - drag.start.y;
+
+      // snap based on primary item
+      if (els.snap.checked) {
+        if (origPrimary.kind === "cable" && origPrimary.points && origPrimary.points.length) {
+          const sp = snapPoint({ x: origPrimary.points[0].x + dx, y: origPrimary.points[0].y + dy });
+          dx = sp.x - origPrimary.points[0].x;
+          dy = sp.y - origPrimary.points[0].y;
+        } else {
+          const sp = snapPoint({ x: origPrimary.x + dx, y: origPrimary.y + dy });
+          dx = sp.x - origPrimary.x;
+          dy = sp.y - origPrimary.y;
+        }
+      }
+
+      for (const xid of drag.ids) {
+        const it = getItemById(xid);
+        const orig = drag.originals.get(xid);
+        if (!it || !orig) continue;
+
+        if (it.kind === "cable") {
+          it.points = orig.points.map(pt => ({
+            x: clampf(pt.x + dx, 0, stage.w),
+            y: clampf(pt.y + dy, 0, stage.h),
+          }));
+        } else {
+          it.x = clampf(orig.x + dx, 0, stage.w);
+          it.y = clampf(orig.y + dy, 0, stage.h);
+        }
+      }
+
+      draw();
+      return;
+    }
+  }
+
+  function onPointerUp(e) {
+    if (!drag.active) return;
+    drag.active = false;
+    try { els.svg.releasePointerCapture(e.pointerId); } catch (_) {}
+
+    // Push history after move/vertex drag
+    pushHistory("drag");
+    drag.mode = null;
+    drag.pointerId = null;
+    drag.start = null;
+    drag.ids = [];
+    drag.primaryId = null;
+    drag.originals = null;
+    drag.vertex = null;
+  }
+
+  // ============================================================
+  // CABLE TOOL
+  // ============================================================
+  function toggleCableTool(on) {
+    const next = !!on;
+    if (cableTool.on === next) return;
+
+    // If turning OFF and we have a draft, commit it (if valid)
+    if (!next && cableTool.draft && cableTool.draft.points.length >= 2) {
+      addCableFromDraft();
+    } else if (!next) {
+      cableTool.draft = null;
+    }
+
+    cableTool.on = next;
+    if (els.cableModeBtn) {
+      els.cableModeBtn.setAttribute("aria-pressed", cableTool.on ? "true" : "false");
+      els.cableModeBtn.textContent = `Cable Tool: ${cableTool.on ? "On" : "Off"}`;
+    }
+    draw();
+  }
+
+  function drawCableDraft() {
+    els.cableDraft.innerHTML = "";
+    if (!cableTool.draft) return;
+    const pts = cableTool.draft.points.map(p => `${p.x},${p.y}`).join(" ");
+    const g = svgEl("g");
+    g.innerHTML = `
+      <polyline points="${pts}" fill="none" stroke="${escapeAttr(cableTool.draft.color)}"
+        stroke-width="${cableTool.draft.width}"
+        stroke-linecap="round" stroke-linejoin="round"
+        stroke-dasharray="6 6" opacity="0.85"/>
+    `;
+    els.cableDraft.appendChild(g);
+  }
+
+  function addCablePointFromEvent(e) {
+    const p = svgPointFromEvent(e);
+    const pt = snapPoint(p);
+
+    if (!cableTool.draft) {
+      cableTool.draft = {
+        points: [pt],
+        color: els.cableColor ? els.cableColor.value : "#111111",
+        width: clampf(parseFloat((els.cableWidth && els.cableWidth.value) || "3"), 1, 20),
+      };
+    } else {
+      cableTool.draft.points.push(pt);
+    }
+    draw();
+  }
+
+  function finishCableDraft() {
+    if (!cableTool.on) return;
+    if (!cableTool.draft) return;
+    if (cableTool.draft.points.length < 2) { cableTool.draft = null; draw(); return; }
+    addCableFromDraft();
+    draw();
+  }
+
+  function cancelCableDraft() {
+    cableTool.draft = null;
+    draw();
+  }
+
+  function popCableDraftPoint() {
+    if (!cableTool.draft) return;
+    cableTool.draft.points.pop();
+    if (cableTool.draft.points.length === 0) cableTool.draft = null;
+    draw();
+  }
+
+  // Capture pointerdown so cable tool works even over items
+  els.svg.addEventListener("pointerdown", (e) => {
+    if (!cableTool.on) return;
+    e.preventDefault();
+    e.stopPropagation();
+    root.focus();
+    addCablePointFromEvent(e);
+  }, true);
+
+  function snapPoint(p) {
+    let x = clampf(p.x, 0, stage.w);
+    let y = clampf(p.y, 0, stage.h);
+    if (els.snap && els.snap.checked) {
+      const gs = gridStepPx();
+      x = Math.round(x / gs) * gs;
+      y = Math.round(y / gs) * gs;
+    }
+    return { x, y };
+  }
+
+  // When not in cable tool, clicking blank stage clears selection
+  function onStagePointerDown(e) {
+    if (cableTool.on) return; // captured already
+    const isBlank = (e.target === els.svg || e.target.id === "sp-bg" || e.target.id === "sp-gridRect");
+    if (!isBlank) return;
+    root.focus();
+    clearSelection();
+  }
+
+  // ============================================================
+  // TRANSFORMS / LAYERING / GROUPING
+  // ============================================================
+  function rotateSelected(delta) {
+    const ids = getSelectedIds();
+    if (!ids.length) return;
+    const list = ids.map(getItemById).filter(Boolean);
+    if (list.some(it => it.locked)) return;
+    for (const it of list) {
+      if (it.kind === "cable") continue;
+      it.r = mod((it.r || 0) + delta, 360);
+    }
+    pushHistory("rotate");
+    draw();
+  }
+
+  function scaleSelected(factor) {
+    const ids = getSelectedIds();
+    if (!ids.length) return;
+    const list = ids.map(getItemById).filter(Boolean);
+    if (list.some(it => it.locked)) return;
+    for (const it of list) {
+      if (it.kind === "cable") continue;
+      it.s = clampf((it.s || 1) * factor, 0.2, 8);
+    }
+    pushHistory("scale");
+    draw();
+  }
+
+  function setLockForIds(ids, locked) {
+    for (const id of ids) {
+      const it = getItemById(id);
+      if (it) it.locked = !!locked;
+    }
+    updateInspector();
+  }
+
+  function toggleLockSelected() {
+    const ids = getSelectedIds();
+    if (!ids.length) return;
+    const list = ids.map(getItemById).filter(Boolean);
+    const allLocked = list.every(it => it.locked);
+    setLockForIds(ids, !allLocked);
+    pushHistory("lock");
+    draw();
+  }
+
+  function deleteIds(ids) {
+    const set = new Set(ids);
+    items = items.filter(it => !set.has(it.id));
+    // cleanup groups with no members
+    cleanupGroups();
+    // update selection
+    for (const id of ids) selected.delete(id);
+    if (selected.size === 0) primaryId = null;
+    updateInspector();
+  }
+
+  function deleteSelected() {
+    const ids = getSelectedIds();
+    if (!ids.length) return;
+    deleteIds(ids);
+    pushHistory("delete");
+    draw();
+  }
+
+  function cleanupGroups() {
+    const live = new Set(items.map(it => it.groupId).filter(Boolean));
+    for (const gid of Object.keys(groups)) {
+      if (!live.has(gid)) delete groups[gid];
+    }
+  }
+
+  function bringForward() {
+    moveOneForward(getSelectedIds());
+    pushHistory("bring forward");
+    draw();
+  }
+
+  function sendBackward() {
+    moveOneBackward(getSelectedIds());
+    pushHistory("send back");
+    draw();
+  }
+
+  function bringToFront() {
+    const ids = getSelectedIds();
+    if (!ids.length) return;
+    const set = new Set(ids);
+    const sel = items.filter(it => set.has(it.id));
+    const rest = items.filter(it => !set.has(it.id));
+    items = rest.concat(sel);
+    pushHistory("bring front");
+    draw();
+  }
+
+  function sendToBack() {
+    const ids = getSelectedIds();
+    if (!ids.length) return;
+    const set = new Set(ids);
+    const sel = items.filter(it => set.has(it.id));
+    const rest = items.filter(it => !set.has(it.id));
+    items = sel.concat(rest);
+    pushHistory("send back all");
+    draw();
+  }
+
+  function moveOneForward(ids) {
+    const set = new Set(ids);
+    for (let i = items.length - 2; i >= 0; i--) {
+      if (set.has(items[i].id) && !set.has(items[i + 1].id)) {
+        const tmp = items[i];
+        items[i] = items[i + 1];
+        items[i + 1] = tmp;
+      }
+    }
+  }
+
+  function moveOneBackward(ids) {
+    const set = new Set(ids);
+    for (let i = 1; i < items.length; i++) {
+      if (set.has(items[i].id) && !set.has(items[i - 1].id)) {
+        const tmp = items[i];
+        items[i] = items[i - 1];
+        items[i - 1] = tmp;
+      }
+    }
+  }
+
+  function moveBlockForward(start, end) {
+    // start..end are indices in items array (back->front). Move block one step forward (toward front / higher index).
+    if (end >= items.length - 1) return;
+    const after = items[end + 1];
+    items.splice(end + 1, 1);
+    items.splice(start, 0, after);
+  }
+
+  function moveBlockBackward(start, end) {
+    if (start <= 0) return;
+    const before = items[start - 1];
+    items.splice(start - 1, 1);
+    items.splice(end, 0, before);
+  }
+
+  // Group / Ungroup
+  function groupSelected() {
+    const ids = getSelectedIds();
+    if (ids.length < 2) return;
+
+    const selSet = new Set(ids);
+    const indices = items.map((it, idx) => selSet.has(it.id) ? idx : -1).filter(i => i >= 0);
+    const maxIndex = Math.max(...indices);
+    const removedBefore = indices.filter(i => i < maxIndex).length;
+    const insertIndex = maxIndex - removedBefore;
+
+    const selectedItems = items.filter(it => selSet.has(it.id));
+    const rest = items.filter(it => !selSet.has(it.id));
+
+    const gid = "g_" + Math.random().toString(16).slice(2);
+    groups[gid] = { name: `Group ${groupCounter++}` };
+
+    for (const it of selectedItems) it.groupId = gid;
+
+    // Insert as contiguous block
+    items = rest.slice(0, insertIndex).concat(selectedItems).concat(rest.slice(insertIndex));
+
+    selectOnly(selectedItems.map(it => it.id));
+    pushHistory("group");
+    draw();
+  }
+
+  function ungroupSelected() {
+    const ids = getSelectedIds();
+    if (!ids.length) return;
+    const selItems = ids.map(getItemById).filter(Boolean);
+    const gids = new Set(selItems.map(it => it.groupId).filter(Boolean));
+    if (gids.size === 0) return;
+
+    for (const gid of gids) {
+      for (const it of items) {
+        if (it.groupId === gid) it.groupId = null;
+      }
+      delete groups[gid];
+      delete ui.groupCollapsed[gid];
+    }
+    cleanupGroups();
+    pushHistory("ungroup");
+    draw();
+  }
+
+  // Duplicate
+  function duplicateIds(ids, preserveGroup = false) {
+    if (!ids.length) return;
+    const selSet = new Set(ids);
+    const inOrder = items.filter(it => selSet.has(it.id));
+    const indices = items.map((it, idx) => selSet.has(it.id) ? idx : -1).filter(i => i >= 0);
+    const maxIndex = Math.max(...indices);
+
+    const offset = 24;
+
+    // map group ids -> new group ids
+    const oldGids = new Set(inOrder.map(it => it.groupId).filter(Boolean));
+    const gidMap = {};
+    for (const og of oldGids) {
+      const ng = "g_" + Math.random().toString(16).slice(2);
+      gidMap[og] = preserveGroup ? ng : null;
+      if (preserveGroup) {
+        const name = groups[og]?.name || "Group";
+        groups[ng] = { name: name + " copy" };
+      }
+    }
+
+    const clones = inOrder.map((it) => {
+      const c = deepClone(it);
+      c.id = uid();
+      c.locked = false;
+      if (c.kind === "cable") {
+        c.points = c.points.map(p => ({ x: clampf(p.x + offset, 0, stage.w), y: clampf(p.y + offset, 0, stage.h) }));
+      } else {
+        c.x = clampf(c.x + offset, 0, stage.w);
+        c.y = clampf(c.y + offset, 0, stage.h);
+      }
+      if (c.groupId && preserveGroup) c.groupId = gidMap[c.groupId] || null;
+      else c.groupId = null; // duplicates start ungrouped unless duplicating a group
+      return c;
+    });
+
+    items.splice(maxIndex + 1, 0, ...clones);
+
+    selectOnly(clones.map(c => c.id));
+    pushHistory("duplicate");
+    draw();
+  }
+
+  function duplicateSelected() {
+    const ids = getSelectedIds();
+    if (!ids.length) return;
+    // If selection is exactly a group: preserve group
+    const selItems = ids.map(getItemById).filter(Boolean);
+    const gid = selItems[0]?.groupId;
+    const sameGroup = gid && selItems.every(it => it.groupId === gid);
+    duplicateIds(ids, !!sameGroup);
+  }
+
+  // ============================================================
+  // SAVE / LOAD / EXPORT
+  // ============================================================
+  function downloadJson() {
+    const data = {
+      version: 2,
+      units: els.units ? els.units.value : "ft",
+      stage: {
+        w: stage.w,
+        h: stage.h,
+        grid: stage.showGrid,
+        gridSizeUnits: parseFloat(els.gridSize.value || "1"),
+        snap: !!(els.snap && els.snap.checked),
+        zoom: stage.zoom,
+      },
+      groups,
+      items,
+    };
+    downloadBlob(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }), "stageplot.json");
+  }
+
+  function loadJsonFile(file) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result);
+        if (!data || !data.stage || !Array.isArray(data.items)) throw new Error("Invalid file.");
+        history.suspend = true;
+
+        if (els.units && (data.units === "m" || data.units === "ft")) els.units.value = data.units;
+
+        stage.showGrid = !!data.stage.grid;
+        stage.zoom = clampf(num(data.stage.zoom, 1), 0.6, 2.0);
+
+        if (els.gridSize) els.gridSize.value = String(num(data.stage.gridSizeUnits, 1));
+        if (els.snap) els.snap.checked = !!data.stage.snap;
+
+        if (els.gridBtn) {
+          els.gridBtn.textContent = `Grid: ${stage.showGrid ? "On" : "Off"}`;
+          els.gridBtn.setAttribute("aria-pressed", stage.showGrid ? "true" : "false");
+        }
+
+        groups = data.groups && typeof data.groups === "object" ? data.groups : {};
+        groupCounter = 1 + Object.keys(groups).length;
+
+        items = data.items.map(it => normalizeItem({ ...it, id: it.id || uid() }));
+        setStageSizePx(num(data.stage.w, 1200), num(data.stage.h, 700));
+
+        // update W/H input display to current units
+        if (els.w) els.w.value = String(round2(pxToUnits(stage.w)));
+        if (els.h) els.h.value = String(round2(pxToUnits(stage.h)));
+
+        clearSelection();
+        toggleCableTool(false);
+
+        // reset history
+        history.stack = [];
+        history.index = -1;
+        pushHistory("load", true);
+
+        history.suspend = false;
+        draw();
+      } catch (err) {
+        history.suspend = false;
+        alert("Could not load JSON: " + err.message);
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function exportSvg() {
+    const clone = els.svg.cloneNode(true);
+    clone.removeAttribute("class");
+    clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+    clone.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
+    const overlay = clone.querySelector("#sp-overlay");
+    if (overlay) overlay.remove();
+    const svgText = `<?xml version="1.0" encoding="UTF-8"?>\n` + clone.outerHTML;
+    downloadBlob(new Blob([svgText], { type:"image/svg+xml" }), "stageplot.svg");
+  }
+
+  async function exportPng() {
+    try {
+      const clone = els.svg.cloneNode(true);
+      const overlay = clone.querySelector("#sp-overlay");
+      if (overlay) overlay.remove();
+      clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+
+      const svgText = clone.outerHTML;
+      const svgDataUrl = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svgText);
+
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      await new Promise((res, rej) => {
+        img.onload = res;
+        img.onerror = () => rej(new Error("PNG export failed (image/CORS issue). Export SVG instead."));
+        img.src = svgDataUrl;
+      });
+
+      const canvas = document.createElement("canvas");
+      canvas.width = stage.w;
+      canvas.height = stage.h;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0);
+
+      canvas.toBlob((blob) => {
+        if (!blob) throw new Error("PNG export failed.");
+        downloadBlob(blob, "stageplot.png");
+      }, "image/png");
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+
+  // ============================================================
+  // HISTORY (Undo/Redo)
+  // ============================================================
+  function snapshotState() {
+    return {
+      stage: { ...stage },
+      units: els.units ? els.units.value : "ft",
+      gridSizeUnits: parseFloat(els.gridSize.value || "1"),
+      snap: !!(els.snap && els.snap.checked),
+      groups: deepClone(groups),
+      items: deepClone(items),
+      selected: getSelectedIds(),
+    };
+  }
+
+  function restoreState(st) {
+    history.suspend = true;
+    stage = { ...st.stage };
+    if (els.units && (st.units === "m" || st.units === "ft")) els.units.value = st.units;
+    if (els.gridSize) els.gridSize.value = String(st.gridSizeUnits ?? 1);
+    if (els.snap) els.snap.checked = !!st.snap;
+    groups = st.groups || {};
+    items = (st.items || []).map(normalizeItem);
+
+    // update W/H input to current units
+    if (els.w) els.w.value = String(round2(pxToUnits(stage.w)));
+    if (els.h) els.h.value = String(round2(pxToUnits(stage.h)));
+
+    if (els.gridBtn) {
+      els.gridBtn.textContent = `Grid: ${stage.showGrid ? "On" : "Off"}`;
+      els.gridBtn.setAttribute("aria-pressed", stage.showGrid ? "true" : "false");
+    }
+
+    selected = new Set(st.selected || []);
+    primaryId = (st.selected && st.selected.length) ? st.selected[0] : null;
+
+    updateInspector();
+    history.suspend = false;
+    draw();
+  }
+
+  function pushHistory(reason, force = false) {
+    if (history.suspend) return;
+    const st = snapshotState();
+    const json = JSON.stringify(st);
+    if (!force && history.index >= 0 && history.stack[history.index] === json) return;
+
+    // drop redo
+    history.stack = history.stack.slice(0, history.index + 1);
+    history.stack.push(json);
+    history.index = history.stack.length - 1;
+
+    // limit
+    if (history.stack.length > 100) {
+      history.stack.shift();
+      history.index--;
+    }
+    updateUndoRedoButtons();
+  }
+
+  function debounceHistory(reason) {
+    if (history.suspend) return;
+    if (history.debounceTimer) clearTimeout(history.debounceTimer);
+    history.debounceTimer = setTimeout(() => {
+      pushHistory(reason);
+      history.debounceTimer = null;
+    }, 450);
+  }
+
+  function undo() {
+    if (history.index <= 0) return;
+    history.index--;
+    const st = JSON.parse(history.stack[history.index]);
+    restoreState(st);
+    updateUndoRedoButtons();
+  }
+
+  function redo() {
+    if (history.index >= history.stack.length - 1) return;
+    history.index++;
+    const st = JSON.parse(history.stack[history.index]);
+    restoreState(st);
+    updateUndoRedoButtons();
+  }
+
+  function updateUndoRedoButtons() {
+    if (els.undoBtn) els.undoBtn.disabled = history.index <= 0;
+    if (els.redoBtn) els.redoBtn.disabled = history.index >= history.stack.length - 1;
+  }
+
+  // ============================================================
+  // EVENTS
+  // ============================================================
+  els.svg.addEventListener("pointermove", onPointerMove);
+  els.svg.addEventListener("pointerup", onPointerUp);
+  els.svg.addEventListener("pointercancel", onPointerUp);
+  els.svg.addEventListener("pointerdown", onStagePointerDown);
+
+  if (els.gridBtn) {
+    els.gridBtn.addEventListener("click", () => {
+      stage.showGrid = !stage.showGrid;
+      els.gridBtn.textContent = `Grid: ${stage.showGrid ? "On" : "Off"}`;
+      els.gridBtn.setAttribute("aria-pressed", stage.showGrid ? "true" : "false");
+      pushHistory("toggle grid");
+      draw();
+    });
+  }
+
+  if (els.search) els.search.addEventListener("input", () => renderLibrary(els.search.value));
+
+  if (els.resizeBtn) els.resizeBtn.addEventListener("click", setStageFromInputs);
+
+  if (els.saveBtn) els.saveBtn.addEventListener("click", downloadJson);
+  if (els.loadInput) els.loadInput.addEventListener("change", (e) => {
+    const f = e.target.files && e.target.files[0];
+    if (f) loadJsonFile(f);
+    e.target.value = "";
+  });
+
+  if (els.exportSvgBtn) els.exportSvgBtn.addEventListener("click", exportSvg);
+  if (els.exportPngBtn) els.exportPngBtn.addEventListener("click", exportPng);
+
+  if (els.addTextBtn) els.addTextBtn.addEventListener("click", () => { addTextItem(); root.focus(); });
+
+  if (els.addImageInput) els.addImageInput.addEventListener("change", (e) => {
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = () => addImageItem(reader.result, f.name);
+    reader.readAsDataURL(f);
+    e.target.value = "";
+    root.focus();
+  });
+
+  if (els.cableModeBtn) els.cableModeBtn.addEventListener("click", () => toggleCableTool(!cableTool.on));
+
+  if (els.clearSel) els.clearSel.addEventListener("click", clearSelection);
+  if (els.deleteBtn) els.deleteBtn.addEventListener("click", deleteSelected);
+  if (els.lockBtn) els.lockBtn.addEventListener("click", toggleLockSelected);
+  if (els.bringFwd) els.bringFwd.addEventListener("click", bringForward);
+  if (els.sendBack) els.sendBack.addEventListener("click", sendBackward);
+  if (els.bringFront) els.bringFront.addEventListener("click", bringToFront);
+  if (els.sendBackAll) els.sendBackAll.addEventListener("click", sendToBack);
+  if (els.duplicateBtn) els.duplicateBtn.addEventListener("click", duplicateSelected);
+  if (els.groupBtn) els.groupBtn.addEventListener("click", groupSelected);
+  if (els.ungroupBtn) els.ungroupBtn.addEventListener("click", ungroupSelected);
+
+  if (els.undoBtn) els.undoBtn.addEventListener("click", undo);
+  if (els.redoBtn) els.redoBtn.addEventListener("click", redo);
+
+  if (els.zoomIn) els.zoomIn.addEventListener("click", () => { stage.zoom = clampf(stage.zoom + 0.1, 0.6, 2.0); pushHistory("zoom"); applyZoom(); });
+  if (els.zoomOut) els.zoomOut.addEventListener("click", () => { stage.zoom = clampf(stage.zoom - 0.1, 0.6, 2.0); pushHistory("zoom"); applyZoom(); });
+
+  if (els.units) {
+    els.units.addEventListener("change", () => {
+      // keep stage px size the same; only update displayed units and grid
+      if (els.w) els.w.value = String(round2(pxToUnits(stage.w)));
+      if (els.h) els.h.value = String(round2(pxToUnits(stage.h)));
+      pushHistory("units");
+      draw();
+    });
+  }
+
+  // Library collapse
+  if (els.libToggle) {
+    els.libToggle.addEventListener("click", () => {
+      const collapsed = root.classList.toggle("sp-lib-collapsed");
+      els.libToggle.setAttribute("aria-pressed", collapsed ? "true" : "false");
+      els.libToggle.textContent = collapsed ? "Show" : "Hide";
+    });
+  }
+
+  // Hotkeys (disabled while typing)
+  root.addEventListener("keydown", (e) => {
+    const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : "";
+    if (tag === "input" || tag === "textarea" || tag === "select" || (e.target && e.target.isContentEditable)) return;
+
+    const key = (e.key || "").toLowerCase();
+
+    // Undo/redo
+    const isMod = e.ctrlKey || e.metaKey;
+    if (isMod && key === "z") {
+      e.preventDefault();
+      if (e.shiftKey) redo();
+      else undo();
+      return;
+    }
+    if (isMod && key === "y") { e.preventDefault(); redo(); return; }
+
+    // Cable tool toggle
+    if (key === "c") { e.preventDefault(); toggleCableTool(!cableTool.on); return; }
+
+    // Cable tool actions
+    if (cableTool.on) {
+      if (e.key === "Enter") { e.preventDefault(); finishCableDraft(); return; }
+      if (e.key === "Escape") { e.preventDefault(); cancelCableDraft(); return; }
+      if (e.key === "Backspace" || e.key === "Delete") { e.preventDefault(); popCableDraftPoint(); return; }
+    }
+
+    // If no selection, stop here (except group keys, etc.)
+    const ids = getSelectedIds();
+    if (!ids.length) return;
+
+    if (key === "delete" || key === "backspace") { e.preventDefault(); deleteSelected(); return; }
+
+    if (key === "r") { e.preventDefault(); rotateSelected(e.shiftKey ? -5 : 5); return; } // fixed: shift works
+    if (e.key === "+") { e.preventDefault(); scaleSelected(1.08); return; }
+    if (e.key === "-") { e.preventDefault(); scaleSelected(1/1.08); return; }
+
+    if (e.key === "[") {
+      e.preventDefault();
+      if (e.shiftKey) sendToBack();
+      else sendBackward();
+      return;
+    }
+    if (e.key === "]") {
+      e.preventDefault();
+      if (e.shiftKey) bringToFront();
+      else bringForward();
+      return;
+    }
+
+    if (key === "l") { e.preventDefault(); toggleLockSelected(); return; }
+    if (key === "d") { e.preventDefault(); duplicateSelected(); return; }
+    if (key === "g") {
+      e.preventDefault();
+      if (e.shiftKey) ungroupSelected();
+      else groupSelected();
+      return;
+    }
+  });
+
+  // ============================================================
+  // HELPERS
+  // ============================================================
+  function svgPointFromEvent(evt) {
+    const pt = els.svg.createSVGPoint();
+    pt.x = evt.clientX;
+    pt.y = evt.clientY;
+    const ctm = els.svg.getScreenCTM();
+    if (!ctm) return { x: 0, y: 0 };
+    const p = pt.matrixTransform(ctm.inverse());
+    return { x: p.x, y: p.y };
+  }
+
+  function svgEl(tag) { return document.createElementNS("http://www.w3.org/2000/svg", tag); }
+
+  function uid() { return "it_" + Math.random().toString(16).slice(2); }
+
+  function clampf(n, a, b) { return Math.max(a, Math.min(b, n)); }
+
+  function round2(n) { return Math.round(n * 100) / 100; }
+
+  function mod(n, m) { return ((n % m) + m) % m; }
+
+  function num(v, fallback) {
+    const n = typeof v === "number" ? v : parseFloat(v);
+    return Number.isFinite(n) ? n : fallback;
+  }
+
+  function deepClone(obj) {
+    if (typeof structuredClone === "function") return structuredClone(obj);
+    return JSON.parse(JSON.stringify(obj));
+  }
+
+  function transformPoint(x, y, m) {
+    return { x: m.a * x + m.c * y + m.e, y: m.b * x + m.d * y + m.f };
+  }
+
+  function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, m => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m]));
+  }
+  function escapeXml(s) {
+    return String(s).replace(/[&<>"]/g, m => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[m]));
+  }
+  function escapeAttr(s) { return escapeHtml(s).replace(/"/g, "&quot;"); }
+
+  function toColorInput(v) {
+    // Accept '#rrggbb' or rgb/rgba. If rgba, just return black-ish fallback.
+    const s = String(v || "").trim();
+    if (/^#[0-9a-fA-F]{6}$/.test(s)) return s;
+    if (/^#[0-9a-fA-F]{3}$/.test(s)) {
+      return "#" + s[1] + s[1] + s[2] + s[2] + s[3] + s[3];
+    }
+    // if rgba(...) parse first 3
+    const m = s.match(/rgba?\(\s*([0-9]+)\s*,\s*([0-9]+)\s*,\s*([0-9]+)(?:\s*,\s*([0-9.]+))?\s*\)/i);
+    if (m) {
+      const r = clampf(parseInt(m[1],10),0,255);
+      const g = clampf(parseInt(m[2],10),0,255);
+      const b = clampf(parseInt(m[3],10),0,255);
+      return "#" + [r,g,b].map(n => n.toString(16).padStart(2,"0")).join("");
+    }
+    return "#111111";
+  }
+
+  function cssEscape(str) {
+    if (window.CSS && CSS.escape) return CSS.escape(str);
+    return String(str).replace(/[^a-zA-Z0-9_\-]/g, "\\$&");
+  }
+
+  // ============================================================
+  // INIT
+  // ============================================================
+  // set W/H inputs from current stage in current units
+  if (els.w) els.w.value = String(round2(pxToUnits(stage.w)));
+  if (els.h) els.h.value = String(round2(pxToUnits(stage.h)));
+
+  if (els.gridBtn) {
+    els.gridBtn.textContent = `Grid: ${stage.showGrid ? "On" : "Off"}`;
+    els.gridBtn.setAttribute("aria-pressed", stage.showGrid ? "true" : "false");
+  }
+  if (els.cableModeBtn) {
+    els.cableModeBtn.setAttribute("aria-pressed", "false");
+    els.cableModeBtn.textContent = "Cable Tool: Off";
+  }
+
+  renderLibrary("");
+  pushHistory("init", true);
+  draw();
+  root.focus();
+})();
+
+</script>
