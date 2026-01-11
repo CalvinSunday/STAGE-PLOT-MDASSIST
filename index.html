@@ -63,6 +63,19 @@
     </div>
   </div>
 
+  <div class="sp-keys" id="sp-keys">
+    <div style="display:flex; gap:16px; align-items:center; padding:8px 12px;">
+      <div style="font-weight:700;">Keys</div>
+      <div>• <b>C</b> toggle cable tool • Cable Tool On → click to place points → Double-click / Enter / Finish Cable to commit</div>
+      <div>• <b>R</b> rotate clockwise • <b>Shift+R</b> counter-clockwise</div>
+      <div>• <b>[</b>/<b>]</b> send back / bring forward • <b>Shift+[</b>/<b>Shift+]</b> to back / to front</div>
+      <div>• <b>D</b> duplicate • <b>G</b> group • <b>Shift+G</b> ungroup</div>
+      <div>• <b>L</b> lock/unlock selection • <b>Del</b> delete</div>
+      <div>• <b>Ctrl/Cmd+Z</b> undo • <b>Ctrl/Cmd+Shift+Z</b> redo</div>
+      <div class="sp-muted" style="margin-left:auto;">Locked items are click-through; unlock from Layers.</div>
+    </div>
+  </div>
+
   <div class="sp-body">
     <aside class="sp-library">
       <div class="sp-libhead">
@@ -75,16 +88,6 @@
 
       <div id="sp-libgrid" class="sp-libgrid"></div>
 
-      <div class="sp-help">
-        <div><b>Keys</b></div>
-        <div>• <b>C</b> toggle cable tool • Cable Tool On → click to place points → Double-click / Enter / Finish Cable to commit</div>
-        <div>• <b>R</b> rotate clockwise • <b>Shift+R</b> counter-clockwise</div>
-        <div>• <b>[</b>/<b>]</b> send back / bring forward • <b>Shift+[</b>/<b>Shift+]</b> to back / to front</div>
-        <div>• <b>D</b> duplicate • <b>G</b> group • <b>Shift+G</b> ungroup</div>
-        <div>• <b>L</b> lock/unlock selection • <b>Del</b> delete</div>
-        <div>• <b>Ctrl/Cmd+Z</b> undo • <b>Ctrl/Cmd+Shift+Z</b> redo</div>
-        <div class="sp-muted" style="margin-top:6px;">Locked items are click-through; unlock them from the Layers panel.</div>
-      </div>
       <div id="sp-libResizer" class="sp-lib-resizer" title="Drag to resize library"></div>
     </aside>
 
@@ -186,6 +189,8 @@
     height: auto;
   }
   .sp-toolbar { display:flex; gap:12px; justify-content:space-between; align-items:center; padding:10px; border:1px solid #e5e7eb; background:#fafafa; border-radius:10px; }
+  .sp-keys { position:sticky; top:0; z-index:10; background:#fff; border-bottom:1px solid #eee; }
+  .sp-keys div { font-size:13px; }
   .sp-toolbarLeft, .sp-toolbarRight { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
   .sp-body { margin-top:10px; display:grid; grid-template-columns: 1fr; grid-template-rows: 320px 1fr; gap:10px;
     flex:1 1 auto; min-height:0; }
@@ -441,10 +446,15 @@
   }
   function drumSvg() {
     return `<svg width="64" height="64" viewBox="0 0 70 70">
-      <circle cx="35" cy="38" r="16" fill="rgba(0,0,0,0.82)"/>
-      <circle cx="35" cy="38" r="12" fill="rgba(255,255,255,0.15)"/>
-      <circle cx="18" cy="25" r="7" fill="rgba(0,0,0,0.82)"/>
-      <circle cx="52" cy="25" r="7" fill="rgba(0,0,0,0.82)"/>
+      <g>
+        <ellipse cx="35" cy="40" rx="16" ry="12" fill="rgba(0,0,0,0.82)"/>
+        <ellipse cx="35" cy="40" rx="10" ry="7" fill="rgba(255,255,255,0.12)"/>
+        <circle cx="18" cy="30" r="6" fill="rgba(0,0,0,0.82)"/>
+        <circle cx="52" cy="30" r="6" fill="rgba(0,0,0,0.82)"/>
+        <!-- hi-hat / cymbal hints -->
+        <ellipse cx="22" cy="18" rx="6" ry="2.5" fill="rgba(0,0,0,0.82)"/>
+        <ellipse cx="48" cy="18" rx="6" ry="2.5" fill="rgba(0,0,0,0.82)"/>
+      </g>
     </svg>`;
   }
   function paSvg() {
@@ -532,8 +542,21 @@
   }
 
   function earsRackSvg(){ return baseBox("IEM"); }
-  function diMonoSvg(){ return baseBox("DI"); }
-  function diStereoSvg(){ return baseBox("2DI"); }
+  function diMonoSvg(){
+    return `<svg width="64" height="64" viewBox="0 0 70 70">
+      <rect x="12" y="20" width="46" height="30" rx="6" fill="rgba(0,0,0,0.82)"/>
+      <rect x="18" y="28" width="34" height="12" rx="3" fill="rgba(255,255,255,0.12)"/>
+      <text x="35" y="50" text-anchor="middle" font-size="12" fill="rgba(255,255,255,0.85)">DI</text>
+    </svg>`;
+  }
+  function diStereoSvg(){
+    return `<svg width="64" height="64" viewBox="0 0 70 70">
+      <rect x="12" y="20" width="46" height="30" rx="6" fill="rgba(0,0,0,0.82)"/>
+      <rect x="14" y="26" width="22" height="12" rx="3" fill="rgba(255,255,255,0.12)"/>
+      <rect x="34" y="26" width="22" height="12" rx="3" fill="rgba(255,255,255,0.12)"/>
+      <text x="35" y="50" text-anchor="middle" font-size="10" fill="rgba(255,255,255,0.85)">2DI</text>
+    </svg>`;
+  }
 
   function riserSvg(){
     // simplified rectangular riser that scales uniformly with svgBW/svgBH metadata
@@ -574,8 +597,10 @@
   function stageBoxSvg(){ return baseBox("SB"); }
   function rugSvg(){
     return `<svg width="64" height="64" viewBox="0 0 70 70">
-      <rect x="14" y="16" width="42" height="38" rx="6" fill="rgba(0,0,0,0.08)" stroke="rgba(0,0,0,0.55)" stroke-width="2" stroke-dasharray="6 4"/>
-      <text x="35" y="39" text-anchor="middle" font-size="11" fill="rgba(0,0,0,0.7)">RUG</text>
+      <rect x="12" y="14" width="46" height="40" rx="8" fill="rgba(0,0,0,0.06)" stroke="rgba(0,0,0,0.55)" stroke-width="2"/>
+      <!-- subtle frayed edges -->
+      <path d="M14 16 L16 18 M56 16 L54 18 M14 50 L16 48 M56 50 L54 48" stroke="rgba(0,0,0,0.30)" stroke-width="1" stroke-linecap="round"/>
+      <text x="35" y="38" text-anchor="middle" font-size="10" fill="rgba(0,0,0,0.7)">RUG</text>
     </svg>`;
   }
   function rfAntennaSvg(){
@@ -699,10 +724,10 @@
     const dots = Array.from({length: 20}).map((_,i)=> {
       const x = 14 + (i%5)*10;
       const y = 20 + Math.floor(i/5)*7;
-      return `<rect x="${x}" y="${y}" width="6" height="4" rx="1"/>`;
+      return `<rect x="${x}" y="${y}" width="6" height="4" rx="0"/>`;
     }).join("");
     return `<svg width="64" height="64" viewBox="0 0 70 70">
-      <rect x="10" y="16" width="50" height="34" rx="6" fill="rgba(0,0,0,0.82)"/>
+      <rect x="10" y="16" width="50" height="34" rx="0" fill="rgba(0,0,0,0.82)"/>
       <g fill="rgba(255,255,255,0.12)">${dots}</g>
     </svg>`;
   }
@@ -747,27 +772,19 @@
 
   function grandPianoSvg(){
     return `<svg width="64" height="64" viewBox="0 0 70 70">
-      <!-- improved top-down grand -->
-      <path d="M18 52
-               C10 40 12 19 33 12
-               C52 6 64 19 64 34
-               C64 52 50 64 33 62
-               C24 61 20 58 18 52 Z"
-            fill="rgba(0,0,0,0.82)"/>
-      <!-- keyboard edge -->
-      <rect x="20" y="42" width="34" height="12" rx="3" fill="rgba(255,255,255,0.20)"/>
-      <g fill="rgba(0,0,0,0.55)">
-        <rect x="22" y="43" width="2" height="10" rx="1"/>
-        <rect x="26" y="43" width="2" height="10" rx="1"/>
-        <rect x="30" y="43" width="2" height="10" rx="1"/>
-        <rect x="34" y="43" width="2" height="10" rx="1"/>
-        <rect x="38" y="43" width="2" height="10" rx="1"/>
-        <rect x="42" y="43" width="2" height="10" rx="1"/>
-        <rect x="46" y="43" width="2" height="10" rx="1"/>
-        <rect x="50" y="43" width="2" height="10" rx="1"/>
+      <!-- refined top-down grand piano silhouette -->
+      <path d="M16 52 C11 40 14 20 33 12 C50 6 64 18 64 34 C64 52 48 64 33 62 C24 61 19 58 16 52 Z" fill="rgba(0,0,0,0.92)"/>
+      <!-- keyboard area with clearer keys -->
+      <rect x="18" y="40" width="36" height="12" rx="2" fill="rgba(255,255,255,0.14)"/>
+      <g fill="rgba(0,0,0,0.85)">
+        <rect x="20" y="41" width="3" height="10" rx="1"/>
+        <rect x="24.5" y="41" width="3" height="10" rx="1"/>
+        <rect x="29" y="41" width="3" height="10" rx="1"/>
+        <rect x="33.5" y="41" width="3" height="10" rx="1"/>
+        <rect x="38" y="41" width="3" height="10" rx="1"/>
+        <rect x="42.5" y="41" width="3" height="10" rx="1"/>
       </g>
-      <!-- lid seam -->
-      <path d="M33 12 L50 60" stroke="rgba(255,255,255,0.12)" stroke-width="3" stroke-linecap="round"/>
+      <text x="33" y="58" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.18)">Piano</text>
     </svg>`;
   }
 
@@ -775,10 +792,10 @@
     // Nord-ish top-down keyboard
     const keys = Array.from({length: 10}).map((_,i)=>`<rect x="${16+i*3.6}" y="31" width="2.4" height="14" rx="1"/>`).join("");
     return `<svg width="64" height="64" viewBox="0 0 70 70">
-      <rect x="10" y="22" width="50" height="26" rx="8" fill="rgba(0,0,0,0.82)"/>
-      <rect x="14" y="28" width="42" height="18" rx="5" fill="rgba(255,255,255,0.20)"/>
-      <g fill="rgba(0,0,0,0.55)">${keys}</g>
-      <circle cx="57" cy="35" r="2.4" fill="rgba(255,255,255,0.22)"/>
+      <rect x="10" y="22" width="50" height="26" rx="6" fill="rgba(0,0,0,0.82)"/>
+      <rect x="14" y="28" width="42" height="18" rx="4" fill="rgba(255,255,255,0.14)"/>
+      <g fill="rgba(0,0,0,0.85)">${keys}</g>
+      <rect x="52" y="32" width="6" height="6" rx="1" fill="rgba(255,255,255,0.20)"/>
     </svg>`;
   }
 
@@ -1231,25 +1248,50 @@
         s = unitsToPx(icon.defWUnits) / svgBW;
       } catch (err) { s = icon.defS ?? 1; }
     }
-    const bw = icon.bw ?? (icon.defWUnits ? Math.round(unitsToPx(icon.defWUnits)) : 90);
-    const bh = icon.bh ?? (icon.defHUnits ? Math.round(unitsToPx(icon.defHUnits)) : 90);
-    items.push(normalizeItem({
-      id,
-      kind: "icon",
-      iconId: icon.id,
-      name: icon.name,
-      x: clampf(x, 0, stage.w), y: clampf(y, 0, stage.h),
-      r: 0,
-      s: s,
-      sx: s,
-      sy: s,
-      label: "",
-      labelSize: 14,
-      labelColor: "#111111",
-      locked: false,
-      bw: bw,
-      bh: bh,
-    }));
+    // Special-case: riser should be a true shape so it can be sized exactly
+    if (icon.id === 'riser') {
+      const wPx = icon.defWUnits ? unitsToPx(icon.defWUnits) : unitsToPx(8);
+      const hPx = icon.defHUnits ? unitsToPx(icon.defHUnits) : unitsToPx(4);
+      items.push(normalizeItem({
+        id,
+        kind: "shape",
+        shape: "rect",
+        name: icon.name,
+        x: clampf(x, 0, stage.w), y: clampf(y, 0, stage.h),
+        r: 0,
+        s: 1,
+        w: clampf(wPx, 20, 4000),
+        h: clampf(hPx, 20, 4000),
+        fill: "rgba(0,0,0,0.08)",
+        stroke: "#111111",
+        strokeWidth: 2,
+        label: icon.name,
+        labelSize: 11,
+        labelColor: "#111111",
+        locked: false,
+        isRiser: true,
+      }));
+    } else {
+      const bw = icon.bw ?? (icon.defWUnits ? Math.round(unitsToPx(icon.defWUnits)) : 90);
+      const bh = icon.bh ?? (icon.defHUnits ? Math.round(unitsToPx(icon.defHUnits)) : 90);
+      items.push(normalizeItem({
+        id,
+        kind: "icon",
+        iconId: icon.id,
+        name: icon.name,
+        x: clampf(x, 0, stage.w), y: clampf(y, 0, stage.h),
+        r: 0,
+        s: s,
+        sx: s,
+        sy: s,
+        label: "",
+        labelSize: 14,
+        labelColor: "#111111",
+        locked: false,
+        bw: bw,
+        bh: bh,
+      }));
+    }
     pushHistory("add icon");
     draw();
     selectOnly([id]);
@@ -1529,17 +1571,41 @@
     const fillAttr = (it.fill && it.fill !== "none") ? `fill="${escapeAttr(it.fill)}" fill-opacity="${clampf(num(it.fillOpacity,1),0,1)}"` : `fill="none"`;
     const strokeAttr = `stroke="${escapeAttr(it.stroke || "#111111")}" stroke-width="${clampf(num(it.strokeWidth,4),1,30)}"`;
 
-    const shapeEl = it.shape === "circle"
-      ? `<ellipse cx="0" cy="0" rx="${it.w/2}" ry="${it.h/2}" ${fillAttr} ${strokeAttr} />`
-      : `<rect x="${-it.w/2}" y="${-it.h/2}" width="${it.w}" height="${it.h}" rx="${Math.min(16, it.w/8, it.h/8)}" ${fillAttr} ${strokeAttr} />`;
+    if (it.isRiser) {
+      // Draw a precise rectangular riser and simple single-line legs
+      const rx = Math.min(8, it.w/10, it.h/6);
+      const rectEl = `<rect x="${-it.w/2}" y="${-it.h/2}" width="${it.w}" height="${it.h}" rx="${rx}" ${fillAttr} ${strokeAttr} />`;
+      // legs: place four single lines near each corner, offset inwards a bit
+      const legInsetX = Math.min(20, it.w*0.12);
+      const legInsetY = Math.min(20, it.h*0.12);
+      const legs = [`
+        <line x1="${-it.w/2 + legInsetX}" y1="${it.h/2}" x2="${-it.w/2 + legInsetX}" y2="${it.h/2 + 18}" stroke="${escapeAttr(it.stroke||'#111111')}" stroke-width="3" stroke-linecap="round"/>
+        <line x1="${it.w/2 - legInsetX}" y1="${it.h/2}" x2="${it.w/2 - legInsetX}" y2="${it.h/2 + 18}" stroke="${escapeAttr(it.stroke||'#111111')}" stroke-width="3" stroke-linecap="round"/>
+        <line x1="${-it.w/2 + legInsetX}" y1="${-it.h/2}" x2="${-it.w/2 + legInsetX}" y2="${-it.h/2 - 18}" stroke="${escapeAttr(it.stroke||'#111111')}" stroke-width="3" stroke-linecap="round"/>
+        <line x1="${it.w/2 - legInsetX}" y1="${-it.h/2}" x2="${it.w/2 - legInsetX}" y2="${-it.h/2 - 18}" stroke="${escapeAttr(it.stroke||'#111111')}" stroke-width="3" stroke-linecap="round"/>
+      `].join('\n');
 
-    g.innerHTML = `
-      <g transform="translate(${it.x} ${it.y}) rotate(${it.r}) scale(${it.s})">
-        ${hit}
-        ${shapeEl}
-      </g>
-      ${renderLabel(it)}
-    `;
+      g.innerHTML = `
+        <g transform="translate(${it.x} ${it.y}) rotate(${it.r}) scale(${it.s})">
+          ${hit}
+          ${rectEl}
+          ${legs}
+        </g>
+        ${renderLabel(it)}
+      `;
+    } else {
+      const shapeEl = it.shape === "circle"
+        ? `<ellipse cx="0" cy="0" rx="${it.w/2}" ry="${it.h/2}" ${fillAttr} ${strokeAttr} />`
+        : `<rect x="${-it.w/2}" y="${-it.h/2}" width="${it.w}" height="${it.h}" rx="${Math.min(16, it.w/8, it.h/8)}" ${fillAttr} ${strokeAttr} />`;
+
+      g.innerHTML = `
+        <g transform="translate(${it.x} ${it.y}) rotate(${it.r}) scale(${it.s})">
+          ${hit}
+          ${shapeEl}
+        </g>
+        ${renderLabel(it)}
+      `;
+    }
 
     g.addEventListener("pointerdown", (e) => onItemPointerDown(e, it.id));
     return g;
