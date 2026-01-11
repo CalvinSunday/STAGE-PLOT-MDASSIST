@@ -182,8 +182,8 @@
   .sp-app { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color:#111; outline:none;
     /* Keep the stage canvas from jumping when the library is open */
     display:flex; flex-direction:column;
-    height: var(--sp-app-height, min(90vh, 980px));
-    min-height: 720px;
+    /* allow the app to grow taller than the viewport so the page can scroll */
+    height: auto;
   }
   .sp-toolbar { display:flex; gap:12px; justify-content:space-between; align-items:center; padding:10px; border:1px solid #e5e7eb; background:#fafafa; border-radius:10px; }
   .sp-toolbarLeft, .sp-toolbarRight { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
@@ -223,7 +223,7 @@
   .sp-canvasWrap { display:flex; flex-direction:column; }
   .sp-svg { background:#fff; border:1px solid #e5e7eb; border-radius:10px; width:100%; height:100%; display:block; }
   .sp-canvasWrap { min-height: var(--sp-canvas-min-height); }
-  .sp-sidepanel { flex:0 0 auto; padding:10px; border-top:1px solid #f0f0f0; background:#fff; display:grid; grid-template-columns: 1.2fr 0.8fr; grid-template-rows: 1fr; gap:10px; height:260px; min-height:180px; max-height:60vh; overflow:hidden; resize:vertical; }
+  .sp-sidepanel { flex:0 0 auto; padding:10px; border-top:1px solid #f0f0f0; background:#fff; display:grid; grid-template-columns: 1.2fr 0.8fr; grid-template-rows: 1fr; gap:10px; height:260px; min-height:180px; max-height:60vh; overflow:auto; resize:vertical; }
   .sp-panelSection { border:1px solid #e5e7eb; border-radius:10px; padding:10px; margin-bottom:0; min-height:0; overflow:auto; }
   .sp-panelHeader { font-weight:700; margin-bottom:10px; }
   .sp-inspectorActions { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px; }
@@ -906,7 +906,7 @@
     { type:"icon", id:"stage_box", name:"Stage Box", svg: stageBoxSvg() },
 
     // Stage furniture / platforms
-    { type:"icon", id:"riser", name:"Riser", svg: riserSvg(), defS: 3.0 },
+    { type:"icon", id:"riser", name:"Riser", svg: riserSvg(), defWUnits: 8, defHUnits: 4 },
     { type:"icon", id:"rug", name:"Rug", svg: rugSvg() },
     { type:"icon", id:"table", name:"Table", svg: tableSvg(), defS: 2.4 },
     { type:"icon", id:"side_table", name:"Side Table", svg: sideTableSvg(), defS: 1.8 },
@@ -1222,6 +1222,14 @@
 
   function addIconItemAt(icon, x, y) {
     const id = uid();
+    // compute scale: if the library item specifies real-world default width/height
+    // in stage units (defWUnits/defHUnits), prefer that to a static defS.
+    let s = icon.defS ?? 1;
+    if (icon.defWUnits) {
+      try { s = unitsToPx(icon.defWUnits) / 70; } catch (err) { s = icon.defS ?? 1; }
+    }
+    const bw = icon.bw ?? (icon.defWUnits ? Math.round(unitsToPx(icon.defWUnits)) : 90);
+    const bh = icon.bh ?? (icon.defHUnits ? Math.round(unitsToPx(icon.defHUnits)) : 90);
     items.push(normalizeItem({
       id,
       kind: "icon",
@@ -1229,13 +1237,13 @@
       name: icon.name,
       x: clampf(x, 0, stage.w), y: clampf(y, 0, stage.h),
       r: 0,
-      s: icon.defS ?? 1,
+      s: s,
       label: "",
       labelSize: 14,
       labelColor: "#111111",
       locked: false,
-      bw: icon.bw ?? 90,
-      bh: icon.bh ?? 90,
+      bw: bw,
+      bh: bh,
     }));
     pushHistory("add icon");
     draw();
@@ -1387,8 +1395,21 @@
   }
 
   function applyZoom() {
-    const z = stage.zoom;
-    els.svg.style.width = (100 * z) + "%";
+    // Adjust the displayed SVG element so it keeps the stage aspect ratio
+    // and allows the page to grow vertically (page scroll). Zoom scales
+    // both width and height of the rendered viewport.
+    const wrap = document.querySelector('.sp-canvasWrap');
+    if (!wrap) return;
+    const style = getComputedStyle(wrap);
+    const padLeft = parseFloat(style.paddingLeft) || 0;
+    const padRight = parseFloat(style.paddingRight) || 0;
+    const availW = Math.max(20, wrap.clientWidth - padLeft - padRight);
+    const baseH = (stage.h / Math.max(1, stage.w)) * availW;
+    const z = clampf(num(stage.zoom, 1), 0.1, 10);
+    const displayW = Math.max(1, availW * z);
+    const displayH = Math.max(1, baseH * z);
+    els.svg.style.width = displayW + 'px';
+    els.svg.style.height = displayH + 'px';
   }
 
   function gridStepPx() {
@@ -3104,6 +3125,9 @@
       document.addEventListener('mouseup', onUp);
     });
   }
+
+  // keep svg sizing responsive to viewport/container changes
+  window.addEventListener('resize', () => { requestAnimationFrame(draw); });
 
   // Hotkeys (disabled while typing)
   root.addEventListener("keydown", (e) => {
