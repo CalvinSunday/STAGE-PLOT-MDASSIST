@@ -66,8 +66,10 @@
   <div class="sp-body">
     <aside class="sp-library">
       <div class="sp-libhead">
-        <button id="sp-libToggle" class="sp-btn sp-mini" aria-pressed="false"><span class="sp-libToggleLabel">Hide</span> <span class="sp-chev">▾</span></button>
-        <div class="sp-libtitle">Library</div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <div class="sp-libtitle">Library</div>
+          <button id="sp-libToggle" class="sp-btn sp-mini" aria-pressed="false"><span class="sp-libToggleLabel">Hide</span> <span class="sp-chev">▾</span></button>
+        </div>
         <input id="sp-search" class="sp-search" placeholder="Search…" />
       </div>
 
@@ -201,10 +203,12 @@
   .sp-lib-resizer { height:8px; cursor:row-resize; background:transparent; }
   .sp-lib-resizer:hover { background:linear-gradient(90deg, rgba(0,0,0,0.03), rgba(0,0,0,0.06)); }
 
-  .sp-card { border:1px solid #e5e7eb; border-radius:10px; padding:8px; cursor:pointer; user-select:none; background:#fff; transition: transform .05s ease; }
-  .sp-card:hover { transform: translateY(-1px); }
-  .sp-thumb { width:64px; height:64px; display:flex; align-items:center; justify-content:center; margin:auto; }
-  .sp-name { margin-top:8px; font-size:12px; text-align:center; color:#111; }
+  /* Compact library cards */
+  .sp-libgrid { padding:8px; display:grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap:8px; }
+  .sp-card { border:1px solid #e5e7eb; border-radius:8px; padding:6px; cursor:pointer; user-select:none; background:#fff; transition: transform .05s ease; display:flex; flex-direction:column; align-items:center; }
+  .sp-card:hover { transform: translateY(-2px); }
+  .sp-thumb { width:44px; height:44px; display:flex; align-items:center; justify-content:center; margin:4px 0; }
+  .sp-name { margin-top:6px; font-size:11px; text-align:center; color:#111; max-width:72px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .sp-help { padding:10px; border-top:1px solid #f0f0f0; font-size:12px; color:#111; }
   .sp-muted { color:#6b7280; }
 
@@ -1468,7 +1472,9 @@
     const lib = findLibById(it.iconId);
     const groupSvg = lib && lib.svgGroup ? lib.svgGroup : makeTintableSvgGroup(baseBox("?"));
 
-    const hit = `<rect x="-60" y="-60" width="120" height="120" fill="transparent"/>`;
+    // Use a smaller fixed hit box for icons to keep library thumbnails compact
+    const hitSize = lib && lib.bw ? lib.bw : 72;
+    const hit = `<rect x="${-hitSize/2}" y="${-hitSize/2}" width="${hitSize}" height="${hitSize}" fill="transparent"/>`;
 
     g.innerHTML = `
       <g transform="translate(${it.x} ${it.y}) rotate(${it.r}) scale(${it.s})" style="color:${escapeAttr(it.color || defaultIconColor(it.iconId || ""))}">
@@ -1666,7 +1672,7 @@
       return;
     }
 
-    const pad = 6;
+    const pad = 2; // tightened selection padding
     els.selRect.setAttribute("x", minX - pad);
     els.selRect.setAttribute("y", minY - pad);
     els.selRect.setAttribute("width", (maxX - minX) + pad * 2);
