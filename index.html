@@ -465,10 +465,30 @@
     </svg>`;
   }
   function micSvg() {
+    // generic mic (legacy)
     return `<svg width="64" height="64" viewBox="0 0 70 70">
       <circle cx="35" cy="24" r="10" fill="rgba(0,0,0,0.82)"/>
       <rect x="31" y="34" width="8" height="16" rx="4" fill="rgba(0,0,0,0.82)"/>
       <rect x="28" y="50" width="14" height="4" rx="2" fill="rgba(0,0,0,0.82)"/>
+    </svg>`;
+  }
+
+  function sm58Svg(){
+    // SM58-like top-down simplified icon (grille + handle)
+    const dots = Array.from({length: 24}).map((_,i)=>{
+      const angle = (Math.PI*2/24) * i;
+      const r = 6;
+      const cx = 35 + Math.cos(angle) * r * 0.6;
+      const cy = 18 + Math.sin(angle) * r * 0.6;
+      return `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="0.9" fill="rgba(255,255,255,0.85)" opacity="0.9"/>`;
+    }).join('');
+    return `<svg width="64" height="64" viewBox="0 0 70 70">
+      <g>
+        <ellipse cx="35" cy="18" rx="10" ry="8" fill="rgba(0,0,0,0.92)"/>
+        <g opacity="0.6">${dots}</g>
+        <rect x="32" y="26" width="6" height="20" rx="3" fill="rgba(0,0,0,0.92)"/>
+        <rect x="28" y="46" width="14" height="6" rx="2" fill="rgba(0,0,0,0.92)"/>
+      </g>
     </svg>`;
   }
 
@@ -502,28 +522,35 @@
 
   function standStraightSvg(){
     return `<svg width="64" height="64" viewBox="0 0 70 70">
-      <rect x="33" y="10" width="4" height="45" rx="2" fill="rgba(0,0,0,0.82)"/>
-      <path d="M35 55 L20 65" stroke="rgba(0,0,0,0.82)" stroke-width="3"/>
-      <path d="M35 55 L50 65" stroke="rgba(0,0,0,0.82)" stroke-width="3"/>
-      <circle cx="35" cy="10" r="4" fill="rgba(0,0,0,0.82)"/>
+      <g>
+        <line x1="35" y1="12" x2="35" y2="44" stroke="rgba(0,0,0,0.92)" stroke-width="4" stroke-linecap="round"/>
+        <!-- tripod legs simplified -->
+        <line x1="35" y1="44" x2="14" y2="64" stroke="rgba(0,0,0,0.92)" stroke-width="3" stroke-linecap="round"/>
+        <line x1="35" y1="44" x2="56" y2="64" stroke="rgba(0,0,0,0.92)" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="35" cy="10" r="4" fill="rgba(0,0,0,0.92)"/>
+      </g>
     </svg>`;
   }
   function standBoomSvg(){
     return `<svg width="64" height="64" viewBox="0 0 70 70">
-      <!-- simplified boom stand silhouette -->
-      <rect x="34" y="14" width="2.5" height="40" rx="1.2" fill="rgba(0,0,0,0.82)"/>
-      <rect x="18" y="54" width="34" height="4" rx="2" fill="rgba(0,0,0,0.82)"/>
-      <path d="M36.25 24 L56 16" stroke="rgba(0,0,0,0.82)" stroke-width="3" stroke-linecap="round"/>
-      <circle cx="56" cy="16" r="3" fill="rgba(0,0,0,0.82)"/>
+      <g>
+        <line x1="34" y1="14" x2="34" y2="48" stroke="rgba(0,0,0,0.92)" stroke-width="3" stroke-linecap="round"/>
+        <line x1="34" y1="48" x2="12" y2="64" stroke="rgba(0,0,0,0.92)" stroke-width="3" stroke-linecap="round"/>
+        <line x1="34" y1="48" x2="56" y2="64" stroke="rgba(0,0,0,0.92)" stroke-width="3" stroke-linecap="round"/>
+        <line x1="36" y1="22" x2="56" y2="16" stroke="rgba(0,0,0,0.92)" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="56" cy="16" r="3" fill="rgba(0,0,0,0.92)"/>
+      </g>
     </svg>`;
   }
   function standShortBoomSvg(){
     return `<svg width="64" height="64" viewBox="0 0 70 70">
-      <rect x="33" y="26" width="4" height="29" rx="2" fill="rgba(0,0,0,0.82)"/>
-      <path d="M35 32 L54 26" stroke="rgba(0,0,0,0.82)" stroke-width="3" stroke-linecap="round"/>
-      <path d="M35 55 L22 65" stroke="rgba(0,0,0,0.82)" stroke-width="3"/>
-      <path d="M35 55 L48 65" stroke="rgba(0,0,0,0.82)" stroke-width="3"/>
-      <circle cx="54" cy="26" r="3.5" fill="rgba(0,0,0,0.82)"/>
+      <g>
+        <line x1="34" y1="26" x2="34" y2="50" stroke="rgba(0,0,0,0.92)" stroke-width="3" stroke-linecap="round"/>
+        <line x1="34" y1="50" x2="14" y2="64" stroke="rgba(0,0,0,0.92)" stroke-width="3" stroke-linecap="round"/>
+        <line x1="34" y1="50" x2="54" y2="64" stroke="rgba(0,0,0,0.92)" stroke-width="3" stroke-linecap="round"/>
+        <line x1="36" y1="30" x2="54" y2="26" stroke="rgba(0,0,0,0.92)" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="54" cy="26" r="3" fill="rgba(0,0,0,0.92)"/>
+      </g>
     </svg>`;
   }
 
@@ -640,76 +667,44 @@
 
   function acousticGtrSvg(){
     return `<svg width="64" height="64" viewBox="0 0 70 70">
-      <!-- acoustic guitar silhouette -->
-      <path d="M35 24
-               C29.5 24 25.5 27.6 25.5 33
-               C25.5 38 28.5 41 32 43
-               C29 45 26.5 48.5 26.5 52.5
-               C26.5 57.5 30.5 61.5 35 61.5
-               C39.5 61.5 43.5 57.5 43.5 52.5
-               C43.5 48.5 41 45 38 43
-               C41.5 41 44.5 38 44.5 33
-               C44.5 27.6 40.5 24 35 24 Z"
-            fill="rgba(0,0,0,0.82)"/>
-      <rect x="31" y="8" width="8" height="20" rx="3" fill="rgba(0,0,0,0.82)"/>
-      <circle cx="35" cy="38.5" r="5.4" fill="rgba(255,255,255,0.95)"/>
+      <!-- acoustic guitar (improved) -->
+      <path d="M35 22 C28 22 24 27 24 33 C24 38 28 41 32 42 C30 44 27 48 27 52 C27 57 31 61 35 61 C39 61 43 57 43 52 C43 48 40 44 38 42 C42 41 46 38 46 33 C46 27 42 22 35 22 Z" fill="rgba(0,0,0,0.92)"/>
+      <rect x="32" y="6" width="6" height="20" rx="2" fill="rgba(0,0,0,0.92)"/>
+      <circle cx="35" cy="37" r="5" fill="rgba(255,255,255,0.12)"/>
+      <line x1="35" y1="20" x2="35" y2="60" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
     </svg>`;
   }
 
   function electricGtrSvg(){
     return `<svg width="64" height="64" viewBox="0 0 70 70">
-      <!-- electric guitar silhouette -->
-      <path d="M26 36
-               C24 34 22 31 24 28
-               C26 24 32 22 36 24
-               C40 26 44 28 48 28
-               C52 28 56 32 54 36
-               C52 40 48 44 44 46
-               C40 48 36 50 32 50
-               C28 50 26 46 26 36 Z"
-            fill="rgba(0,0,0,0.82)"/>
-      <rect x="30" y="6" width="6" height="28" rx="3" fill="rgba(0,0,0,0.82)"/>
-      <rect x="30" y="4" width="14" height="6" rx="2" fill="rgba(0,0,0,0.82)"/>
+      <!-- electric guitar (improved) -->
+      <path d="M22 40 C22 40 26 34 34 32 C38 31 44 28 50 30 C56 32 58 36 56 40 C54 44 48 48 42 50 C36 52 30 50 26 46 C24 44 22 40 22 40 Z" fill="rgba(0,0,0,0.92)"/>
+      <rect x="30" y="6" width="6" height="28" rx="2" fill="rgba(0,0,0,0.92)"/>
+      <rect x="30" y="4" width="14" height="6" rx="2" fill="rgba(0,0,0,0.92)"/>
+      <rect x="34" y="36" width="8" height="6" rx="1.5" fill="rgba(255,255,255,0.08)"/>
     </svg>`;
   }
 
   function bassGtrSvg(){
     return `<svg width="64" height="64" viewBox="0 0 70 70">
-      <!-- bass guitar silhouette (longer neck) -->
-      <path d="M27 36
-               C25 34 23 31 24.5 28
-               C26.5 24 32 22 36 24
-               C40 26 44 28 48 28
-               C52 28 56 32 55 36
-               C54 40 50 44 46 46
-               C42 48 38 50 33 50
-               C29.5 50 27.5 47 27 36 Z"
-            fill="rgba(0,0,0,0.82)"/>
-      <rect x="28" y="2" width="6" height="34" rx="3" fill="rgba(0,0,0,0.82)"/>
-      <g>
-        <circle cx="36" cy="4" r="1.2" fill="rgba(0,0,0,0.82)"/>
-        <circle cx="36" cy="8" r="1.2" fill="rgba(0,0,0,0.82)"/>
-        <circle cx="36" cy="12" r="1.2" fill="rgba(0,0,0,0.82)"/>
-        <circle cx="36" cy="16" r="1.2" fill="rgba(0,0,0,0.82)"/>
+      <!-- bass guitar (long neck) -->
+      <path d="M24 40 C24 40 28 34 36 32 C40 31 46 30 52 32 C56 33 58 36 57 40 C56 44 52 48 46 50 C40 52 34 51 30 48 C28 46 24 40 24 40 Z" fill="rgba(0,0,0,0.92)"/>
+      <rect x="26" y="2" width="5" height="36" rx="2" fill="rgba(0,0,0,0.92)"/>
+      <g fill="rgba(255,255,255,0.12)">
+        <circle cx="30" cy="6" r="1.2"/>
+        <circle cx="30" cy="10" r="1.2"/>
+        <circle cx="30" cy="14" r="1.2"/>
       </g>
     </svg>`;
   }
 
   function violinSvg(){
     return `<svg width="64" height="64" viewBox="0 0 70 70">
-      <!-- violin silhouette -->
-      <path d="M35 22
-               C31.5 22 29 24.5 29 28
-               C29 30 30 31.8 31.5 33
-               C29.8 34.2 28.5 36 28.8 38
-               C29.5 42 32.5 45 35 45
-               C37.5 45 40.5 42 41.2 38
-               C41.5 36 40.2 34.2 38.5 33
-               C40 31.8 41 30 41 28
-               C41 24.5 38.5 22 35 22 Z"
-            fill="rgba(0,0,0,0.82)"/>
-      <rect x="33" y="10" width="4" height="12" rx="2" fill="rgba(0,0,0,0.82)"/>
-      <path d="M31 6 H39 C41 6 42 7.5 42 9.5 V12.5 C42 14.5 41 15.5 39 15.5 H31 Z" fill="rgba(0,0,0,0.82)"/>
+      <!-- violin -->
+      <path d="M35 20 C30 20 27 24 27 28 C27 31 29 33 31 34 C29 36 27 38 27 41 C27 45 30 48 35 48 C40 48 43 45 43 41 C43 38 41 36 39 34 C41 33 43 31 43 28 C43 24 40 20 35 20 Z" fill="rgba(0,0,0,0.92)"/>
+      <rect x="33" y="8" width="4" height="14" rx="2" fill="rgba(0,0,0,0.92)"/>
+      <path d="M31 6 H39 C41 6 42 7.5 42 9.5 V12.5 C42 14.5 41 15.5 39 15.5 H31 Z" fill="rgba(0,0,0,0.92)"/>
+      <line x1="35" y1="30" x2="35" y2="46" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
     </svg>`;
   }
 
@@ -905,7 +900,7 @@
     { type:"icon", id:"playback_rig", name:"Playback Rig", svg: playbackRigSvg() },
     { type:"icon", id:"laptop", name:"Laptop", svg: laptopSvg() },
     { type:"icon", id:"chair", name:"Chair", svg: chairSvg() },
-    { type:"icon", id:"power_120v", name:"120V", svg: power120Svg() },
+    { type:"icon", id:"power_120v", name:"120V", svg: power120Svg(), defVoltage: "120V", bw: 100, bh: 42 },
     { type:"icon", id:"power_drop", name:"Power Drop", svg: powerDropSvg() },
 
     // Stands / RF / IEM
@@ -925,7 +920,7 @@
     // Stage furniture / platforms
     { type:"icon", id:"riser", name:"Riser", svg: riserSvg(), defWUnits: 8, defHUnits: 4, svgBW:60, svgBH:35 },
     { type:"icon", id:"rug", name:"Rug", svg: rugSvg() },
-    { type:"icon", id:"table", name:"Table", svg: tableSvg(), defS: 2.4 },
+    { type:"icon", id:"table", name:"Table", svg: tableSvg(), defWUnits: 6, defHUnits: 2.5, svgBW:42, svgBH:18 },
     { type:"icon", id:"side_table", name:"Side Table", svg: sideTableSvg(), defS: 1.8 },
     { type:"icon", id:"lamp_shade", name:"Lamp (Shade)", svg: lampShadeSvg() },
 
@@ -971,6 +966,7 @@
     { type:"icon", id:"drum", name:"Drum Kit", svg: drumSvg() },
     { type:"icon", id:"pa", name:"PA", svg: paSvg() },
     { type:"icon", id:"mic", name:"Mic", svg: micSvg() },
+    { type:"icon", id:"sm58", name:"SM58", svg: sm58Svg() },
   ].map((x) => {
     if (x.type === "icon") {
       return { ...x, svgGroup: makeTintableSvgGroup(x.svg) };
@@ -1249,7 +1245,7 @@
       } catch (err) { s = icon.defS ?? 1; }
     }
     // Special-case: riser should be a true shape so it can be sized exactly
-    if (icon.id === 'riser') {
+    if (icon.id === 'riser' || icon.id === 'table') {
       const wPx = icon.defWUnits ? unitsToPx(icon.defWUnits) : unitsToPx(8);
       const hPx = icon.defHUnits ? unitsToPx(icon.defHUnits) : unitsToPx(4);
       items.push(normalizeItem({
@@ -1274,6 +1270,8 @@
     } else {
       const bw = icon.bw ?? (icon.defWUnits ? Math.round(unitsToPx(icon.defWUnits)) : 90);
       const bh = icon.bh ?? (icon.defHUnits ? Math.round(unitsToPx(icon.defHUnits)) : 90);
+      // power icon: set default voltage and distinctive color
+      const extra = (icon.id === 'power_120v') ? { powerVoltage: icon.defVoltage || '120V', powerTextColor: '#000000', color: '#ffd54f' } : {};
       items.push(normalizeItem({
         id,
         kind: "icon",
@@ -1290,6 +1288,7 @@
         locked: false,
         bw: bw,
         bh: bh,
+        ...extra
       }));
     }
     pushHistory("add icon");
@@ -1544,15 +1543,32 @@
     const hitSize = lib && lib.bw ? lib.bw : 72;
     const hit = `<rect x="${-hitSize/2}" y="${-hitSize/2}" width="${hitSize}" height="${hitSize}" fill="transparent"/>`;
 
-    g.innerHTML = `
-      <g transform="translate(${it.x} ${it.y}) rotate(${it.r}) scale(${(it.sx||it.s)} ${(it.sy||it.s)})" style="color:${escapeAttr(it.color || defaultIconColor(it.iconId || ""))}">
-        ${hit}
-        <g transform="translate(-35 -35)">
-          ${groupSvg}
+    // Special rendering for power label icons so they stand out and display chosen voltage
+    if (it.iconId === 'power_120v') {
+      const bg = escapeAttr(it.color || '#ffd54f');
+      const txt = escapeXml(it.powerVoltage || it.name || '120V');
+      const txtCol = escapeAttr(it.powerTextColor || '#000000');
+      g.innerHTML = `
+        <g transform="translate(${it.x} ${it.y}) rotate(${it.r}) scale(${it.s})">
+          ${hit}
+          <g transform="translate(-40 -21)">
+            <rect x="0" y="0" width="80" height="42" rx="8" fill="${bg}" stroke="#111" stroke-width="1.5"/>
+            <text x="40" y="27" text-anchor="middle" font-size="16" font-weight="700" fill="${txtCol}">${txt}</text>
+          </g>
         </g>
-      </g>
-      ${renderLabel(it)}
-    `;
+        ${renderLabel(it)}
+      `;
+    } else {
+      g.innerHTML = `
+        <g transform="translate(${it.x} ${it.y}) rotate(${it.r}) scale(${(it.sx||it.s)} ${(it.sy||it.s)})" style="color:${escapeAttr(it.color || defaultIconColor(it.iconId || ""))}">
+          ${hit}
+          <g transform="translate(-35 -35)">
+            ${groupSvg}
+          </g>
+        </g>
+        ${renderLabel(it)}
+      `;
+    }
 
     g.addEventListener("pointerdown", (e) => onItemPointerDown(e, it.id));
     return g;
@@ -1909,6 +1925,50 @@
       hookLabelFields(it);
       const color = document.getElementById("sp-f-color");
       color.addEventListener("input", (e) => { it.color = e.target.value; draw(); debounceHistory("icon color"); });
+      // Power icon inspector controls
+      if (it.iconId === 'power_120v') {
+        const voltHtml = `
+          <div class="sp-field">
+            <div>Power label</div>
+            <div class="sp-inline">
+              <select id="sp-f-powerVoltage">
+                <option value="120V">120V</option>
+                <option value="208V">208V</option>
+                <option value="220V">220V</option>
+                <option value="230V">230V</option>
+                <option value="240V">240V</option>
+                <option value="custom">Custom</option>
+              </select>
+              <input id="sp-f-powerCustom" placeholder="Custom label" style="width:120px;" />
+              <label>Text color <input id="sp-f-powerTextColor" type="color" value="#000000"/></label>
+            </div>
+          </div>`;
+        els.inspectorFields.insertAdjacentHTML('beforeend', voltHtml);
+        const sel = document.getElementById('sp-f-powerVoltage');
+        const custom = document.getElementById('sp-f-powerCustom');
+        const textCol = document.getElementById('sp-f-powerTextColor');
+        // initialize
+        if (!it.powerVoltage) it.powerVoltage = it.powerVoltage || (findLibById(it.iconId)?.defVoltage || it.name || '120V');
+        if (!it.powerTextColor) it.powerTextColor = it.powerTextColor || '#000000';
+        if (sel) {
+          sel.value = ['120V','208V','220V','230V','240V'].includes(it.powerVoltage) ? it.powerVoltage : 'custom';
+        }
+        if (custom) custom.value = ['120V','208V','220V','230V','240V'].includes(it.powerVoltage) ? '' : it.powerVoltage;
+        if (textCol) textCol.value = it.powerTextColor;
+        if (sel) sel.addEventListener('change', (e)=>{
+          const v = e.target.value;
+          if (v === 'custom') {
+            // keep current custom in input
+            it.powerVoltage = custom.value || '';
+          } else {
+            it.powerVoltage = v;
+            if (custom) custom.value = '';
+          }
+          draw(); debounceHistory('power label');
+        });
+        if (custom) custom.addEventListener('input', (e)=>{ it.powerVoltage = e.target.value || ''; draw(); debounceHistory('power custom'); });
+        if (textCol) textCol.addEventListener('input', (e)=>{ it.powerTextColor = e.target.value; draw(); debounceHistory('power text color'); });
+      }
       // Riser-specific size controls (edit width/height in current units)
       if (it.iconId === 'riser') {
         const iconMeta = findLibById(it.iconId) || {};
