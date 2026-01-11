@@ -45,8 +45,8 @@
 
       <span class="sp-sep"></span>
 
-      <button id="sp-zoomOut" class="sp-btn">−</button>
-      <button id="sp-zoomIn" class="sp-btn">+</button>
+      <button id="sp-zoomOut" class="sp-btn" title="Zoom Out (stage)">− Zoom Out</button>
+      <button id="sp-zoomIn" class="sp-btn" title="Zoom In (stage)">+ Zoom In</button>
 
       <span class="sp-sep"></span>
 
@@ -217,11 +217,11 @@
   .sp-stageTop { padding:10px; border-bottom:1px solid #f0f0f0; background:#fafafa; }
   .sp-row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
   .sp-stageGrid { display:flex; flex-direction:column; flex:1 1 auto; min-height:0; }
-  .sp-canvasWrap { flex:1 1 auto; min-height:0; padding:10px; overflow:auto; border-right:none; border-bottom:1px solid #f0f0f0; }
+  .sp-canvasWrap { flex:1 1 auto; min-height:0; padding:10px; overflow:auto; border-right:none; border-bottom:1px solid #f0f0f0; background:#f3f4f6; }
   /* canvas should fill available space and not be squished by library resize */
   :root { --sp-canvas-min-height: 420px; }
   .sp-canvasWrap { display:flex; flex-direction:column; }
-  .sp-svg { background:#fff; border:1px solid #e5e7eb; border-radius:10px; width:100%; height:100%; display:block; }
+  .sp-svg { background:#ffffff; border:1px solid #d1d5db; border-radius:10px; width:100%; height:100%; display:block; box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
   .sp-canvasWrap { min-height: var(--sp-canvas-min-height); }
   .sp-sidepanel { flex:0 0 auto; padding:10px; border-top:1px solid #f0f0f0; background:#fff; display:grid; grid-template-columns: 1.2fr 0.8fr; grid-template-rows: 1fr; gap:10px; height:260px; min-height:180px; max-height:60vh; overflow:auto; resize:vertical; }
   .sp-panelSection { border:1px solid #e5e7eb; border-radius:10px; padding:10px; margin-bottom:0; min-height:0; overflow:auto; }
@@ -536,14 +536,14 @@
   function diStereoSvg(){ return baseBox("2DI"); }
 
   function riserSvg(){
+    // simplified rectangular riser that scales uniformly with svgBW/svgBH metadata
     return `<svg width="64" height="64" viewBox="0 0 70 70">
-      <rect x="10" y="20" width="50" height="26" rx="6"
+      <rect x="5" y="17.5" width="60" height="35" rx="4"
         fill="rgba(0,0,0,0.08)" stroke="rgba(0,0,0,0.75)" stroke-width="2"/>
-      <rect x="12" y="46" width="6" height="8" rx="2" fill="rgba(0,0,0,0.55)"/>
-      <rect x="52" y="46" width="6" height="8" rx="2" fill="rgba(0,0,0,0.55)"/>
-      <rect x="24" y="46" width="6" height="8" rx="2" fill="rgba(0,0,0,0.55)"/>
-      <rect x="40" y="46" width="6" height="8" rx="2" fill="rgba(0,0,0,0.55)"/>
-      <text x="35" y="36" text-anchor="middle" font-size="11" fill="rgba(0,0,0,0.75)">RISER</text>
+      <rect x="12" y="52" width="6" height="8" rx="2" fill="rgba(0,0,0,0.55)"/>
+      <rect x="30" y="52" width="6" height="8" rx="2" fill="rgba(0,0,0,0.55)"/>
+      <rect x="48" y="52" width="6" height="8" rx="2" fill="rgba(0,0,0,0.55)"/>
+      <text x="35" y="39" text-anchor="middle" font-size="11" fill="rgba(0,0,0,0.75)">RISER</text>
     </svg>`;
   }
 
@@ -906,7 +906,7 @@
     { type:"icon", id:"stage_box", name:"Stage Box", svg: stageBoxSvg() },
 
     // Stage furniture / platforms
-    { type:"icon", id:"riser", name:"Riser", svg: riserSvg(), defWUnits: 8, defHUnits: 4 },
+    { type:"icon", id:"riser", name:"Riser", svg: riserSvg(), defWUnits: 8, defHUnits: 4, svgBW:60, svgBH:35 },
     { type:"icon", id:"rug", name:"Rug", svg: rugSvg() },
     { type:"icon", id:"table", name:"Table", svg: tableSvg(), defS: 2.4 },
     { type:"icon", id:"side_table", name:"Side Table", svg: sideTableSvg(), defS: 1.8 },
@@ -1226,7 +1226,10 @@
     // in stage units (defWUnits/defHUnits), prefer that to a static defS.
     let s = icon.defS ?? 1;
     if (icon.defWUnits) {
-      try { s = unitsToPx(icon.defWUnits) / 70; } catch (err) { s = icon.defS ?? 1; }
+      try {
+        const svgBW = icon.svgBW || 70;
+        s = unitsToPx(icon.defWUnits) / svgBW;
+      } catch (err) { s = icon.defS ?? 1; }
     }
     const bw = icon.bw ?? (icon.defWUnits ? Math.round(unitsToPx(icon.defWUnits)) : 90);
     const bh = icon.bh ?? (icon.defHUnits ? Math.round(unitsToPx(icon.defHUnits)) : 90);
@@ -1238,6 +1241,8 @@
       x: clampf(x, 0, stage.w), y: clampf(y, 0, stage.h),
       r: 0,
       s: s,
+      sx: s,
+      sy: s,
       label: "",
       labelSize: 14,
       labelColor: "#111111",
@@ -1498,7 +1503,7 @@
     const hit = `<rect x="${-hitSize/2}" y="${-hitSize/2}" width="${hitSize}" height="${hitSize}" fill="transparent"/>`;
 
     g.innerHTML = `
-      <g transform="translate(${it.x} ${it.y}) rotate(${it.r}) scale(${it.s})" style="color:${escapeAttr(it.color || defaultIconColor(it.iconId || ""))}">
+      <g transform="translate(${it.x} ${it.y}) rotate(${it.r}) scale(${(it.sx||it.s)} ${(it.sy||it.s)})" style="color:${escapeAttr(it.color || defaultIconColor(it.iconId || ""))}">
         ${hit}
         <g transform="translate(-35 -35)">
           ${groupSvg}
@@ -1838,6 +1843,51 @@
       hookLabelFields(it);
       const color = document.getElementById("sp-f-color");
       color.addEventListener("input", (e) => { it.color = e.target.value; draw(); debounceHistory("icon color"); });
+      // Riser-specific size controls (edit width/height in current units)
+      if (it.iconId === 'riser') {
+        const iconMeta = findLibById(it.iconId) || {};
+        const svgBW = iconMeta.svgBW || 70;
+        const svgBH = iconMeta.svgBH || 70;
+        const curW = round2(pxToUnits((it.sx || it.s || 1) * svgBW));
+        const curH = round2(pxToUnits((it.sy || it.s || 1) * svgBH));
+        const unitsLabel = (els.units && els.units.value === 'm') ? 'm' : 'ft';
+        const riserHtml = `
+          <div class="sp-field">
+            <div>Riser size (${unitsLabel})</div>
+            <div class="sp-inline">
+              <label>W <input id="sp-f-riser-w" type="number" step="0.1" min="0.1" value="${curW}"/></label>
+              <label>H <input id="sp-f-riser-h" type="number" step="0.1" min="0.1" value="${curH}"/></label>
+              <button id="sp-f-riser-preset" class="sp-btn sp-mini">Preset</button>
+            </div>
+          </div>`;
+        els.inspectorFields.insertAdjacentHTML('beforeend', riserHtml);
+        const elW = document.getElementById('sp-f-riser-w');
+        const elH = document.getElementById('sp-f-riser-h');
+        if (elW) elW.addEventListener('input', (e) => {
+          const nw = clampf(parseFloat(e.target.value||'0.1'), 0.1, 9999);
+          const newSx = unitsToPx(nw) / svgBW;
+          it.sx = newSx;
+          // keep sy stable
+          draw(); debounceHistory('riser size');
+        });
+        if (elH) elH.addEventListener('input', (e) => {
+          const nh = clampf(parseFloat(e.target.value||'0.1'), 0.1, 9999);
+          const newSy = unitsToPx(nh) / svgBH;
+          it.sy = newSy;
+          draw(); debounceHistory('riser size');
+        });
+        const preset = document.getElementById('sp-f-riser-preset');
+        if (preset) preset.addEventListener('click', () => {
+          // cycle common presets: 4x8, 4x4, 6x8
+          const presets = [[8,4],[4,4],[8,6]];
+          const cur = [round2(pxToUnits((it.sx||it.s||1)*svgBW)), round2(pxToUnits((it.sy||it.s||1)*svgBH))];
+          let idx = presets.findIndex(p => p[0]===cur[0] && p[1]===cur[1]); idx = (idx+1) % presets.length;
+          const [pw, ph] = presets[idx];
+          if (elW) elW.value = pw; if (elH) elH.value = ph;
+          it.sx = unitsToPx(pw) / svgBW; it.sy = unitsToPx(ph) / svgBH;
+          draw(); debounceHistory('riser preset');
+        });
+      }
       attachQuickAdjust();
       return;
     }
@@ -2038,7 +2088,7 @@
   function hookCommonTransforms(it) {
     const elScale = document.getElementById("sp-f-scale");
     const elRot = document.getElementById("sp-f-rot");
-    if (elScale) elScale.addEventListener("input", (e) => { it.s = clampf(parseFloat(e.target.value||"1"), 0.2, 8); draw(); debounceHistory("scale"); });
+    if (elScale) elScale.addEventListener("input", (e) => { const v = clampf(parseFloat(e.target.value||"1"), 0.2, 8); it.s = v; it.sx = v; it.sy = v; draw(); debounceHistory("scale"); });
     if (elRot) elRot.addEventListener("input", (e) => { it.r = mod(parseFloat(e.target.value||"0"), 360); draw(); debounceHistory("rotate"); });
   }
 
