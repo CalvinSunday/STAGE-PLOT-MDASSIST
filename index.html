@@ -250,7 +250,8 @@
   #stageplot-app.sp-fullscreen .sp-sidepanel.floating { display:block !important; position:fixed; right:20px; top:80px; width:320px; max-height:calc(100vh - 140px); overflow:auto; background:rgba(255,255,255,0.98); z-index:10002; border-radius:8px; box-shadow:0 10px 40px rgba(0,0,0,0.36); cursor:grab; }
   #stageplot-app.sp-fullscreen .sp-sidepanel.floating.dragging { cursor:grabbing; opacity:0.99; }
   #stageplot-app.sp-fullscreen .sp-sidepanel.floating.minimized { height:48px; overflow:visible; }
-  .sp-sidepanel .sp-float-hdr { display:flex; align-items:center; gap:8px; padding:8px 10px; border-bottom:1px solid rgba(0,0,0,0.06); background:linear-gradient(180deg, rgba(255,255,255,0.9), rgba(250,250,250,0.9)); cursor:grab; }
+  .sp-sidepanel .sp-float-hdr { display:none; align-items:center; gap:8px; padding:8px 10px; border-bottom:1px solid rgba(0,0,0,0.06); background:linear-gradient(180deg, rgba(255,255,255,0.9), rgba(250,250,250,0.9)); cursor:grab; }
+  #stageplot-app.sp-fullscreen .sp-sidepanel.floating .sp-float-hdr { display:flex; }
   .sp-sidepanel .sp-float-hdr .sp-title { font-weight:700; flex:1; }
   .sp-sidepanel .sp-float-hdr .sp-float-btn { border:0; background:transparent; padding:6px 8px; border-radius:6px; cursor:pointer; }
   .sp-sidepanel .sp-float-btn:hover { background:rgba(0,0,0,0.04); }
@@ -3387,8 +3388,41 @@
       try { 
         const isRoot = document.fullscreenElement === root;
         root.classList.toggle('sp-fullscreen', isRoot); 
-        // hide floating library by default when entering fullscreen to maximize canvas
-        if (isRoot) root.classList.remove('sp-full-lib-visible');
+        // show fullscreen toggles only in fullscreen
+        if (els.fullLibToggle) els.fullLibToggle.style.display = isRoot ? 'inline-block' : 'none';
+        if (els.fullInspectorToggle) els.fullInspectorToggle.style.display = isRoot ? 'inline-block' : 'none';
+
+        const sp = document.querySelector('.sp-sidepanel');
+        const lib = document.querySelector('.sp-library');
+
+        if (isRoot) {
+          // show floating inspector by default
+          root.classList.add('sp-full-inspector-visible');
+          if (sp) sp.classList.add('floating');
+          // hide floating library by default when entering fullscreen to maximize canvas
+          root.classList.remove('sp-full-lib-visible');
+        } else {
+          // reset fullscreen-only classes and inline styles
+          root.classList.remove('sp-full-inspector-visible');
+          if (sp) {
+            sp.classList.remove('floating', 'minimized', 'dragging');
+            sp.style.position = '';
+            sp.style.left = '';
+            sp.style.top = '';
+            sp.style.right = '';
+            sp.style.width = '';
+            sp.style.maxHeight = '';
+          }
+          if (lib) {
+            lib.classList.remove('dragging');
+            lib.style.position = '';
+            lib.style.left = '';
+            lib.style.top = '';
+            lib.style.right = '';
+            lib.style.width = '';
+            lib.style.maxHeight = '';
+          }
+        }
       } catch (err) {}
       try { adjustFullscreenCanvas(); } catch (err) {}
     });
