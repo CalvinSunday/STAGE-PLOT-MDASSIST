@@ -1691,7 +1691,8 @@
   }
 
   function renderLibrary() {
-    const lib = document.getElementById("sp-library");
+    const lib = els.libgrid || document.getElementById("sp-libgrid");
+    if (!lib) return;
     lib.innerHTML = "";
     LIB_ITEMS.forEach((it, i) => {
       const el = document.createElement("div");
