@@ -3369,9 +3369,33 @@
     document.addEventListener('fullscreenchange', () => {
       updateFullBtn();
       try { root.classList.toggle('sp-fullscreen', document.fullscreenElement === root); } catch (err) {}
+      try { adjustFullscreenCanvas(); } catch (err) {}
     });
     updateFullBtn();
   }
+
+  // Adjust SVG size in fullscreen to best-fit the available viewport while preserving aspect ratio
+  function adjustFullscreenCanvas() {
+    if (!els.svg) return;
+    const isFull = document.fullscreenElement === root || root.classList.contains('sp-fullscreen');
+    if (!isFull) { applyZoom(); return; }
+    // Reserve space for floating library and toolbar; mirror CSS paddings
+    const reservedLeft = 240; // width of floating library + margin
+    const reservedTop = 120; // toolbar + vertical padding
+    const availW = Math.max(100, window.innerWidth - reservedLeft - 60);
+    const availH = Math.max(100, window.innerHeight - reservedTop - 60);
+    const stageRatio = (stage.w || 1) / (stage.h || 1);
+    let drawW = availW;
+    let drawH = Math.round(drawW / stageRatio);
+    if (drawH > availH) {
+      drawH = availH;
+      drawW = Math.round(drawH * stageRatio);
+    }
+    els.svg.style.width = drawW + 'px';
+    els.svg.style.height = drawH + 'px';
+  }
+
+  window.addEventListener('resize', () => { try { adjustFullscreenCanvas(); } catch (err) {} });
 
   // Restore library collapsed state and height from localStorage
   try {
