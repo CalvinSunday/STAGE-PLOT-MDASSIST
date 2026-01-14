@@ -3680,6 +3680,30 @@
 
   function svgEl(tag) { return document.createElementNS("http://www.w3.org/2000/svg", tag); }
 
+  function renderLabel(it) {
+    try {
+      if (!it || !it.label) return "";
+      const size = clampf(num(it.labelSize, 14), 8, 72);
+      const color = escapeAttr(it.labelColor || "#111111");
+      let offsetY = 0;
+      if (it.kind === "icon") {
+        const bh = num(it.bh, it.h) || 40;
+        offsetY = Math.round((bh / 2) + 10);
+      } else if (it.kind === "shape") {
+        offsetY = Math.round((it.h || 40) / 2 + 10);
+      } else {
+        offsetY = Math.round(size + 6);
+      }
+      return `
+        <g transform="translate(${it.x} ${it.y + offsetY})" pointer-events="none">
+          <text x="0" y="0" text-anchor="middle" font-size="${size}" fill="${color}" style="font-weight:600" dominant-baseline="middle">${escapeXml(it.label)}</text>
+        </g>
+      `;
+    } catch (err) {
+      return "";
+    }
+  }
+
   function uid() { return "it_" + Math.random().toString(16).slice(2); }
 
   function clampf(n, a, b) { return Math.max(a, Math.min(b, n)); }
