@@ -1614,15 +1614,31 @@
     } else {
       // Generic icon: render external SVG via <image> if `src` provided, otherwise use inline group SVG
       if (it.src) {
-        g.innerHTML = `
-          <g transform="translate(${it.x} ${it.y}) rotate(${it.r}) scale(${(it.sx||it.s)} ${(it.sy||it.s)})" style="color:${escapeAttr(it.color || defaultIconColor(it.iconId || ""))}">
-            ${hit}
-            <g transform="translate(${-bw/2} ${-bh/2})">
-              <image href="${it.src}" x="0" y="0" width="${bw}" height="${bh}" preserveAspectRatio="xMidYMid meet" />
-            </g>
-          </g>
-          ${renderLabel(it)}
-        `;
+        const g2 = svgEl('g');
+        g2.setAttribute('transform', `translate(${it.x} ${it.y}) rotate(${it.r}) scale(${(it.sx||it.s)} ${(it.sy||it.s)})`);
+        // hit box
+        const hitRect = svgEl('rect');
+        hitRect.setAttribute('x', -hitSize/2);
+        hitRect.setAttribute('y', -hitSize/2);
+        hitRect.setAttribute('width', hitSize);
+        hitRect.setAttribute('height', hitSize);
+        hitRect.setAttribute('fill', 'transparent');
+        g2.appendChild(hitRect);
+        // image wrapper
+        const wrap = svgEl('g');
+        wrap.setAttribute('transform', `translate(${-bw/2} ${-bh/2})`);
+        const img = svgEl('image');
+        img.setAttribute('x', '0');
+        img.setAttribute('y', '0');
+        img.setAttribute('width', String(bw));
+        img.setAttribute('height', String(bh));
+        img.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+        img.setAttributeNS('http://www.w3.org/1999/xlink', 'href', it.src);
+        wrap.appendChild(img);
+        g2.appendChild(wrap);
+        g.appendChild(g2);
+        // append label HTML (renderLabel returns SVG markup)
+        if (typeof renderLabel === 'function') g.insertAdjacentHTML('beforeend', renderLabel(it));
       } else {
         g.innerHTML = `
           <g transform="translate(${it.x} ${it.y}) rotate(${it.r}) scale(${(it.sx||it.s)} ${(it.sy||it.s)})" style="color:${escapeAttr(it.color || defaultIconColor(it.iconId || ""))}">
