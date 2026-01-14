@@ -81,7 +81,8 @@
     <aside class="sp-library">
       <div class="sp-libhead">
         <div style="display:flex; gap:8px; align-items:center;">
-          <div class="sp-libtitle">Library</div>
+            <div class="sp-libtitle">Library</div>
+            <span class="sp-collapsedLabel" style="display:none; font-weight:700; margin-left:8px;">Library</span>
           <button id="sp-libToggle" class="sp-btn sp-mini" aria-pressed="false"><span class="sp-libToggleLabel">Hide</span> <span class="sp-chev">▾</span></button>
         </div>
         <input id="sp-search" class="sp-search" placeholder="Search…" />
@@ -224,10 +225,19 @@
   .sp-row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
   .sp-stageGrid { display:flex; flex-direction:column; flex:1 1 auto; min-height:0; }
   .sp-canvasWrap { flex:1 1 auto; min-height:0; padding:10px; overflow:auto; border-right:none; border-bottom:1px solid #f0f0f0; background:#f3f4f6; }
+  /* Make the area around the canvas slightly darker to separate it from the white canvas */
+  .sp-canvasWrap { background:#e6e9ef; }
   /* canvas should fill available space and not be squished by library resize */
   :root { --sp-canvas-min-height: 420px; }
   .sp-canvasWrap { display:flex; flex-direction:column; }
   .sp-svg { background:#ffffff; border:1px solid #d1d5db; border-radius:10px; width:100%; height:100%; display:block; box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
+
+  /* Fullscreen mode: hide side UI and center the canvas, keep canvas aspect ratio tight */
+  #stageplot-app.sp-fullscreen .sp-library,
+  #stageplot-app.sp-fullscreen .sp-sidepanel { display:none !important; }
+  #stageplot-app.sp-fullscreen .sp-toolbar { position:fixed; top:10px; left:10px; right:auto; z-index:9999; }
+  #stageplot-app.sp-fullscreen .sp-canvasWrap { padding:20px; background:#111827; display:flex; align-items:center; justify-content:center; }
+  #stageplot-app.sp-fullscreen .sp-svg { width:auto !important; height:auto !important; max-width:calc(100vw - 80px); max-height:calc(100vh - 120px); box-shadow: 0 6px 30px rgba(0,0,0,0.6); }
   .sp-canvasWrap { min-height: var(--sp-canvas-min-height); }
   /* Cable tool cursor: tiny power-plug icon */
   .sp-cable-mode .sp-canvasWrap, .sp-cable-mode .sp-svg { cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'><rect x='6' y='1' width='4' height='6' fill='%23111'/><rect x='5' y='7' width='6' height='6' rx='1' fill='%23111'/><rect x='5.5' y='2' width='1' height='2' fill='%23fff'/><rect x='9.5' y='2' width='1' height='2' fill='%23fff'/></svg>") 8 8, crosshair; }
@@ -1569,6 +1579,23 @@
           <g transform="translate(-35 -35)">
             ${groupSvg}
           </g>
+        </g>
+        ${renderLabel(it)}
+      `;
+    }
+
+    // If this is a riser icon (legacy items), render as a plain rectangle so on-canvas it matches shape risers
+    if (it.iconId === 'riser') {
+      const lib = findLibById(it.iconId) || {};
+      const bw = it.bw || lib.svgBW || 60;
+      const bh = it.bh || lib.svgBH || 35;
+      const fill = it.fill || 'rgba(0,0,0,0.08)';
+      const stroke = it.stroke || it.color || '#111111';
+      const rect = `<rect x="${-bw/2}" y="${-bh/2}" width="${bw}" height="${bh}" rx="0" fill="${fill}" stroke="${stroke}" stroke-width="2"/>`;
+      g.innerHTML = `
+        <g transform="translate(${it.x} ${it.y}) rotate(${it.r}) scale(1)">
+          ${hit}
+          ${rect}
         </g>
         ${renderLabel(it)}
       `;
@@ -3320,6 +3347,8 @@
       els.libToggle.setAttribute("aria-pressed", collapsed ? "true" : "false");
       const lbl = els.libToggle.querySelector('.sp-libToggleLabel');
       if (lbl) lbl.textContent = collapsed ? "Show" : "Hide";
+      const collLabel = document.querySelector('.sp-collapsedLabel');
+      if (collLabel) collLabel.style.display = collapsed ? 'inline-block' : 'none';
       try { localStorage.setItem("sp.lib.collapsed", collapsed ? "1" : "0"); } catch (err) {}
     });
   }
@@ -3334,7 +3363,10 @@
         else await document.exitFullscreen();
       } catch (err) { /* ignore */ }
     });
-    document.addEventListener('fullscreenchange', updateFullBtn);
+    document.addEventListener('fullscreenchange', () => {
+      updateFullBtn();
+      try { root.classList.toggle('sp-fullscreen', document.fullscreenElement === root); } catch (err) {}
+    });
     updateFullBtn();
   }
 
