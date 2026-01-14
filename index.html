@@ -953,17 +953,17 @@
     { type:"icon", id:"speaker_top", name:"Speaker (Top)", svg: speakerTopSvg() },
     { type:"icon", id:"sub", name:"Sub", svg: subSvg() },
 
-    // Instruments / people
-    { type:"icon", id:"acoustic_guitar", name:"Acoustic Guitar", svg: acousticGtrSvg() },
-    { type:"icon", id:"electric_guitar", name:"Electric Guitar", svg: electricGtrSvg() },
-    { type:"icon", id:"bass", name:"Bass Guitar", svg: bassGtrSvg() },
+    // Instruments / people (these icons load external SVGs from icons/)
+    { type:"icon", id:"acoustic_guitar", name:"Acoustic Guitar", src: "icons/acoustic_guitar.svg", bw:90, bh:90 },
+    { type:"icon", id:"electric_guitar", name:"Electric Guitar", src: "icons/electric_guitar.svg", bw:90, bh:90 },
+    { type:"icon", id:"bass", name:"Bass Guitar", src: "icons/bass_guitar.svg", bw:90, bh:90 },
     { type:"icon", id:"violin", name:"Violin", svg: violinSvg() },
     { type:"icon", id:"guitar_boat", name:"Guitar Boat", svg: guitarBoatSvg(), defS: 2.6 },
     { type:"icon", id:"gtr_stand", name:"Guitar Stand", svg: gtrStandSvg() },
     { type:"icon", id:"kbd_stool", name:"Keyboard Stool", svg: stoolSvg() },
     { type:"icon", id:"kbd_stand", name:"Keyboard Stand", svg: kbdStandSvg() },
-    { type:"icon", id:"keyboard", name:"Keyboard", svg: keyboardSvg(), defS: 2.6 },
-    { type:"icon", id:"grand_piano", name:"Grand Piano", svg: grandPianoSvg(), defS: 2.8 },
+    { type:"icon", id:"keyboard", name:"Keyboard", src: "icons/keyboard.svg", bw:120, bh:40, defS: 2.6 },
+    { type:"icon", id:"grand_piano", name:"Grand Piano", src: "icons/grand_piano.svg", bw:160, bh:100, defS: 2.8 },
     { type:"icon", id:"drum_pad", name:"Drum Pad", svg: drumPadSvg() },
     { type:"icon", id:"band_member", name:"Band Member (Unisex)", svg: bandMemberSvg() },
     { type:"icon", id:"singer", name:"Singer (Unisex)", svg: singerSvg() },
@@ -990,7 +990,8 @@
     { type:"icon", id:"sm58", name:"SM58", svg: sm58Svg() },
   ].map((x) => {
     if (x.type === "icon") {
-      return { ...x, svgGroup: makeTintableSvgGroup(x.svg) };
+      // Only create an SVG group if an inline svg string exists; external icons will use `src` and be rendered as <image>
+      return { ...x, svgGroup: x.svg ? makeTintableSvgGroup(x.svg) : null };
     }
     return x;
   });
@@ -1534,39 +1535,23 @@
     else els.items.style.pointerEvents = "auto";
   }
 
-  function labelYFor(it) {
-    const size = clampf(num(it.labelSize, 14), 8, 72);
-    let halfH = 40 * (it.s || 1);
-    if (it.kind === "shape") halfH = (it.h * (it.s || 1)) / 2;
-    if (it.kind === "image") halfH = (it.ih * (it.s || 1)) / 2;
-    return it.y + halfH + size * 0.9 + 6;
-  }
-
-  function renderLabel(it) {
-    if (!it.label) return "";
-    const size = clampf(num(it.labelSize, 14), 8, 72);
-    const color = it.labelColor || "#111111";
-    const y = labelYFor(it);
-    return `<text x="${it.x}" y="${y}" text-anchor="middle" font-size="${size}"
-                 fill="${escapeAttr(color)}" pointer-events="none">${escapeXml(it.label)}</text>`;
-  }
-
   function renderIcon(it) {
     const g = svgEl("g");
     g.setAttribute("data-id", it.id);
-    g.setAttribute("filter", "url(#sp-shadow)");
     g.style.cursor = it.locked ? "default" : "grab";
     g.style.opacity = it.locked ? "0.85" : "1";
     g.style.pointerEvents = it.locked ? "none" : "auto";
 
-    const lib = findLibById(it.iconId);
-    const groupSvg = lib && lib.svgGroup ? lib.svgGroup : makeTintableSvgGroup(baseBox("?"));
+    const lib = findLibById(it.iconId) || {};
+    const bw = it.bw || lib.svgBW || 72;
+    const bh = it.bh || lib.svgBH || 72;
+    const groupSvg = it.svgGroup || (lib.svgGroup || makeTintableSvgGroup(baseBox("?")));
 
     // Use a smaller fixed hit box for icons to keep library thumbnails compact
     const hitSize = lib && lib.bw ? lib.bw : 72;
     const hit = `<rect x="${-hitSize/2}" y="${-hitSize/2}" width="${hitSize}" height="${hitSize}" fill="transparent"/>`;
 
-    // Special rendering for power label icons so they stand out and display chosen voltage
+    // Special-case power label
     if (it.iconId === 'power_120v') {
       const bg = escapeAttr(it.color || '#ffd54f');
       const txt = escapeXml(it.powerVoltage || it.name || '120V');
@@ -1581,23 +1566,7 @@
         </g>
         ${renderLabel(it)}
       `;
-    } else {
-      g.innerHTML = `
-        <g transform="translate(${it.x} ${it.y}) rotate(${it.r}) scale(${(it.sx||it.s)} ${(it.sy||it.s)})" style="color:${escapeAttr(it.color || defaultIconColor(it.iconId || ""))}">
-          ${hit}
-          <g transform="translate(-35 -35)">
-            ${groupSvg}
-          </g>
-        </g>
-        ${renderLabel(it)}
-      `;
-    }
-
-    // If this is a riser icon (legacy items), render as a plain rectangle so on-canvas it matches shape risers
-    if (it.iconId === 'riser') {
-      const lib = findLibById(it.iconId) || {};
-      const bw = it.bw || lib.svgBW || 60;
-      const bh = it.bh || lib.svgBH || 35;
+    } else if (it.iconId === 'riser') {
       const fill = it.fill || 'rgba(0,0,0,0.08)';
       const stroke = it.stroke || it.color || '#111111';
       const rect = `<rect x="${-bw/2}" y="${-bh/2}" width="${bw}" height="${bh}" rx="0" fill="${fill}" stroke="${stroke}" stroke-width="2"/>`;
@@ -1608,6 +1577,29 @@
         </g>
         ${renderLabel(it)}
       `;
+    } else {
+      // Generic icon: render external SVG via <image> if `src` provided, otherwise use inline group SVG
+      if (it.src) {
+        g.innerHTML = `
+          <g transform="translate(${it.x} ${it.y}) rotate(${it.r}) scale(${(it.sx||it.s)} ${(it.sy||it.s)})" style="color:${escapeAttr(it.color || defaultIconColor(it.iconId || ""))}">
+            ${hit}
+            <g transform="translate(${-bw/2} ${-bh/2})">
+              <image href="${it.src}" x="0" y="0" width="${bw}" height="${bh}" preserveAspectRatio="xMidYMid meet" />
+            </g>
+          </g>
+          ${renderLabel(it)}
+        `;
+      } else {
+        g.innerHTML = `
+          <g transform="translate(${it.x} ${it.y}) rotate(${it.r}) scale(${(it.sx||it.s)} ${(it.sy||it.s)})" style="color:${escapeAttr(it.color || defaultIconColor(it.iconId || ""))}">
+            ${hit}
+            <g transform="translate(-35 -35)">
+              ${groupSvg}
+            </g>
+          </g>
+          ${renderLabel(it)}
+        `;
+      }
     }
 
     g.addEventListener("pointerdown", (e) => onItemPointerDown(e, it.id));
@@ -1698,33 +1690,45 @@
     return g;
   }
 
-  function renderCable(it) {
-    const g = svgEl("g");
-    g.setAttribute("data-id", it.id);
-    g.style.cursor = it.locked ? "default" : "grab";
-    g.style.opacity = it.locked ? "0.85" : "1";
-    g.style.pointerEvents = it.locked ? "none" : "auto";
+  function renderLibrary() {
+    const lib = document.getElementById("sp-library");
+    lib.innerHTML = "";
+    LIB_ITEMS.forEach((it, i) => {
+      const el = document.createElement("div");
+      el.className = "sp-lib-item";
+      el.draggable = true;
+      el.dataset.idx = i;
 
-    const pts = it.points.map(p => `${p.x},${p.y}`).join(" ");
-    const fat = Math.max(14, it.width * 5);
-    g.innerHTML = `
-      <polyline points="${pts}" fill="none" stroke="transparent" stroke-width="${fat}" stroke-linecap="round" stroke-linejoin="round"/>
-      <polyline points="${pts}" fill="none" stroke="${escapeAttr(it.color)}" stroke-width="${it.width}" stroke-linecap="round" stroke-linejoin="round"/>
-    `;
-    g.addEventListener("pointerdown", (e) => onItemPointerDown(e, it.id));
-    return g;
-  }
+      const thumb = document.createElement("div");
+      thumb.className = "sp-lib-thumb";
+      if (it.src) {
+        const img = document.createElement("img");
+        img.src = it.src;
+        img.alt = it.label || it.id;
+        img.style.width = (it.bw || 40) + "px";
+        img.style.height = (it.bh || 40) + "px";
+        thumb.appendChild(img);
+      } else {
+        thumb.innerHTML = it.svg || riserSvg();
+      }
+      el.appendChild(thumb);
 
-  // ============================================================
-  // SELECTION OVERLAY (accurate bbox)
-  // ============================================================
-  function getRenderedEl(id) {
-    try {
-      return els.items.querySelector(`[data-id="${cssEscape(id)}"]`);
-    } catch (_) {
-      return els.items.querySelector(`[data-id="${id.replace(/"/g, '\\"')}"]`);
+      const label = document.createElement("div");
+      label.className = "sp-lib-label";
+      label.textContent = it.label || it.id;
+      el.appendChild(label);
+
+        lib.appendChild(el);
+      });
     }
-  }
+
+    function getItemEl(id) {
+      try {
+        return els.items.querySelector(`[data-id="${cssEscape(id)}"]`);
+      } catch (_) {
+        return els.items.querySelector(`[data-id="${id.replace(/"/g, '\\"')}"]`);
+      }
+    }
 
   function getTransformedBBox(el) {
     try {
