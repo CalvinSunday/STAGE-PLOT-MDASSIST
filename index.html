@@ -2885,7 +2885,10 @@
     for (const it of list) {
       if (it.kind === "cable") continue;
       if (it.isRiser || it.iconId === "riser") continue;
-      it.s = clampf((it.s || 1) * factor, 0.2, 8);
+      const next = clampf((it.s || 1) * factor, 0.2, 8);
+      it.s = next;
+      // Keep icon scale axes in sync so renderIcon reflects changes
+      if (it.kind === "icon") { it.sx = next; it.sy = next; }
     }
     pushHistory("scale");
     draw();
@@ -3426,7 +3429,9 @@
     const ids = getSelectedIds(); if (ids.length !== 1) return;
     const it = getItemById(ids[0]); if (!it || it.locked) return;
     if (it.kind === "cable") return;
-    it.s = clampf((it.s || 1) * mult, 0.2, 8);
+    const next = clampf((it.s || 1) * mult, 0.2, 8);
+    it.s = next;
+    if (it.kind === "icon") { it.sx = next; it.sy = next; }
     draw();
     pushHistory("nudge scale");
   }
