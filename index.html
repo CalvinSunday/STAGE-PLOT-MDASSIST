@@ -1194,26 +1194,8 @@
   }
 
   function addIconItem(libIcon) {
-    const id = uid();
-    const it = normalizeItem({
-      id,
-      kind: "icon",
-      iconId: libIcon.id,
-      name: libIcon.name,
-      x: stage.w / 2,
-      y: stage.h / 2,
-      r: 0,
-      s: libIcon.defS ?? 1,
-      locked: false,
-      color: defaultIconColor(libIcon.id),
-      label: "",
-      labelSize: 14,
-      labelColor: "#111111",
-    });
-    items.push(it);
-    selectOnly([id]);
-    pushHistory("add icon");
-    draw();
+    // Use the same logic as drag-drop to preserve special cases (e.g., riser as shape)
+    addIconItemAt(libIcon, stage.w / 2, stage.h / 2);
   }
 
   function addShapeItem(shape, name, w = 200, h = 200) {
@@ -1587,12 +1569,7 @@
   }
 
   function attachContextDelete(el, id) {
-    el.addEventListener("contextmenu", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      selectFromClick(id, { shift: false, fromCanvas: true });
-      deleteSelected();
-    });
+    // Right-click delete disabled (browser context menu preserved)
   }
 
   function renderIcon(it) {
@@ -1646,7 +1623,7 @@
       const stroke = it.stroke || it.color || '#111111';
       const rect = `<rect x="${-bw/2}" y="${-bh/2}" width="${bw}" height="${bh}" rx="0" fill="${fill}" stroke="${stroke}" stroke-width="2"/>`;
       g.innerHTML = `
-        <g transform="translate(${it.x} ${it.y}) rotate(${it.r}) scale(1)">
+        <g transform="translate(${it.x} ${it.y}) rotate(${it.r}) scale(${(it.sx||it.s)} ${(it.sy||it.s)})">
           ${hit}
           ${rect}
         </g>
@@ -2646,7 +2623,7 @@
     const ids = [];
     for (const it of items) {
       if (it.locked) continue;
-      const el = getItemEl(it.id);
+      const el = getRenderedEl(it.id);
       if (!el) continue;
       const bb = getTransformedBBox(el);
       if (!bb) continue;
