@@ -47,6 +47,7 @@
 
       <button id="sp-zoomOut" class="sp-btn" title="Zoom Out (stage)">− Zoom Out</button>
       <button id="sp-zoomIn" class="sp-btn" title="Zoom In (stage)">+ Zoom In</button>
+      <button id="sp-fullscreenBtn" class="sp-btn">Fullscreen</button>
 
       <span class="sp-sep"></span>
 
@@ -185,8 +186,8 @@
   .sp-app { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color:#111; outline:none;
     /* Keep the stage canvas from jumping when the library is open */
     display:flex; flex-direction:column;
-    /* allow the app to grow taller than the viewport so the page can scroll */
-    height: auto;
+    /* make the app fill the viewport so the canvas is visible without page scroll */
+    min-height: 100vh;
   }
   .sp-toolbar { display:flex; gap:12px; justify-content:space-between; align-items:center; padding:10px; border:1px solid #e5e7eb; background:#fafafa; border-radius:10px; }
   .sp-keys { position:sticky; top:0; z-index:10; background:#fff; border-bottom:1px solid #eee; }
@@ -333,6 +334,7 @@
     layerList: document.getElementById("sp-layerList"),
     zoomIn: document.getElementById("sp-zoomIn"),
     zoomOut: document.getElementById("sp-zoomOut"),
+    fullscreenBtn: document.getElementById("sp-fullscreenBtn"),
     units: document.getElementById("sp-units"),
     qaScaleDown: document.getElementById("sp-qaScaleDown"),
     qaScaleUp: document.getElementById("sp-qaScaleUp"),
@@ -3316,6 +3318,20 @@
       if (lbl) lbl.textContent = collapsed ? "Show" : "Hide";
       try { localStorage.setItem("sp.lib.collapsed", collapsed ? "1" : "0"); } catch (err) {}
     });
+  }
+
+  // Fullscreen toggle
+  if (els.fullscreenBtn) {
+    const fb = els.fullscreenBtn;
+    function updateFullBtn() { fb.textContent = document.fullscreenElement ? 'Exit Fullscreen' : 'Fullscreen'; }
+    fb.addEventListener('click', async () => {
+      try {
+        if (!document.fullscreenElement) await root.requestFullscreen();
+        else await document.exitFullscreen();
+      } catch (err) { /* ignore */ }
+    });
+    document.addEventListener('fullscreenchange', updateFullBtn);
+    updateFullBtn();
   }
 
   // Restore library collapsed state and height from localStorage
