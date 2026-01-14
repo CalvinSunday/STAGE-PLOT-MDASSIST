@@ -233,8 +233,7 @@
   .sp-canvasWrap { display:flex; flex-direction:column; }
   .sp-svg { background:#ffffff; border:1px solid #d1d5db; border-radius:10px; width:100%; height:100%; display:block; box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
 
-  /* Fullscreen: force canvas-first layout (hide library & sidepanel) and keep toolbar available */
-  #stageplot-app.sp-fullscreen .sp-library,
+  /* Fullscreen: force canvas-first layout (hide sidepanel) and keep toolbar available; show floating draggable library */
   #stageplot-app.sp-fullscreen .sp-sidepanel { display:none !important; }
   #stageplot-app.sp-fullscreen .sp-toolbar { position:fixed; top:8px; left:8px; right:8px; z-index:9999; border-radius:10px; }
   /* Make the main canvas area occupy the rest of the viewport */
@@ -242,6 +241,9 @@
   #stageplot-app.sp-fullscreen .sp-canvasWrap { width:100%; height:100%; padding:0; background:transparent; display:flex; align-items:center; justify-content:center; }
   /* SVG: let JS compute precise pixel size to fully use available area */
   #stageplot-app.sp-fullscreen .sp-svg { width:auto !important; height:auto !important; max-width:none !important; max-height:none !important; box-shadow: 0 6px 30px rgba(0,0,0,0.6); background:#ffffff; border-radius:10px; }
+  /* Floating library in fullscreen (draggable) */
+  #stageplot-app.sp-fullscreen .sp-library { display:block !important; position:fixed; left:20px; top:80px; width:260px; max-height:calc(100vh - 140px); overflow:auto; background:rgba(255,255,255,0.96); z-index:10001; border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.28); cursor:grab; }
+  #stageplot-app.sp-fullscreen .sp-library.dragging { cursor:grabbing; opacity:0.98; }
   .sp-canvasWrap { min-height: var(--sp-canvas-min-height); }
   /* Cable tool cursor: tiny power-plug icon */
   .sp-cable-mode .sp-canvasWrap, .sp-cable-mode .sp-svg { cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'><rect x='6' y='1' width='4' height='6' fill='%23111'/><rect x='5' y='7' width='6' height='6' rx='1' fill='%23111'/><rect x='5.5' y='2' width='1' height='2' fill='%23fff'/><rect x='9.5' y='2' width='1' height='2' fill='%23fff'/></svg>") 8 8, crosshair; }
@@ -3389,6 +3391,62 @@
       try { root.classList.toggle('sp-full-lib-visible'); adjustFullscreenCanvas(); } catch (err) {}
     });
   }
+
+  // Make the floating library draggable in fullscreen
+  (function initFloatingLibraryDrag(){
+    const lib = document.querySelector('.sp-library');
+    if (!lib) return;
+    const handle = lib.querySelector('.sp-libhead') || lib;
+    let drag = { active:false, startX:0, startY:0, origLeft:0, origTop:0 };
+
+    function toNumber(px){ return Number(String(px||'').replace('px','')) || 0; }
+
+    handle.addEventListener('pointerdown', (e) => {
+      // only allow dragging when in fullscreen
+      if (!(root.classList && root.classList.contains('sp-fullscreen'))) return;
+      drag.active = true;
+      drag.startX = e.clientX;
+      drag.startY = e.clientY;
+      // ensure lib is fixed positioned
+      lib.style.position = 'fixed';
+      lib.style.left = lib.style.left || (lib.getBoundingClientRect().left + 'px');
+      lib.style.top = lib.style.top || (lib.getBoundingClientRect().top + 'px');
+      drag.origLeft = toNumber(lib.style.left);
+      drag.origTop = toNumber(lib.style.top);
+      lib.classList.add('dragging');
+      handle.setPointerCapture(e.pointerId);
+    });
+
+    window.addEventListener('pointermove', (e) => {
+      if (!drag.active) return;
+      const dx = e.clientX - drag.startX;
+      const dy = e.clientY - drag.startY;
+      let nx = Math.round(drag.origLeft + dx);
+      let ny = Math.round(drag.origTop + dy);
+      // clamp to viewport
+      nx = Math.max(8, Math.min(nx, window.innerWidth - lib.offsetWidth - 8));
+      ny = Math.max(8, Math.min(ny, window.innerHeight - lib.offsetHeight - 8));
+      lib.style.left = nx + 'px';
+      lib.style.top = ny + 'px';
+    });
+
+    window.addEventListener('pointerup', (e) => {
+      if (!drag.active) return;
+      drag.active = false;
+      try { handle.releasePointerCapture && handle.releasePointerCapture(e.pointerId); } catch (err) {}
+      lib.classList.remove('dragging');
+      // persist position so we can restore it next time
+      try { localStorage.setItem('sp.lib.pos', JSON.stringify({ left: lib.style.left, top: lib.style.top })); } catch (err) {}
+    });
+
+    // restore position on load/enter fullscreen
+    try {
+      const pos = JSON.parse(localStorage.getItem('sp.lib.pos') || 'null');
+      if (pos && pos.left) {
+        lib.style.left = pos.left; lib.style.top = pos.top;
+      }
+    } catch (err) {}
+  })();
 
   // Adjust SVG size in fullscreen to best-fit the available viewport while preserving aspect ratio
   function adjustFullscreenCanvas() {
