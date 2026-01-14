@@ -49,6 +49,7 @@
       <button id="sp-zoomIn" class="sp-btn" title="Zoom In (stage)">+ Zoom In</button>
       <button id="sp-fullscreenBtn" class="sp-btn">Fullscreen</button>
       <button id="sp-fullLibToggle" class="sp-btn" style="display:none">Library</button>
+      <button id="sp-fullInspectorToggle" class="sp-btn" style="display:none">Inspector</button>
 
       <span class="sp-sep"></span>
 
@@ -244,6 +245,15 @@
   /* Floating library in fullscreen (draggable) */
   #stageplot-app.sp-fullscreen .sp-library { display:block !important; position:fixed; left:20px; top:80px; width:260px; max-height:calc(100vh - 140px); overflow:auto; background:rgba(255,255,255,0.96); z-index:10001; border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.28); cursor:grab; }
   #stageplot-app.sp-fullscreen .sp-library.dragging { cursor:grabbing; opacity:0.98; }
+
+  /* Floating inspector in fullscreen */
+  #stageplot-app.sp-fullscreen .sp-sidepanel.floating { display:block !important; position:fixed; right:20px; top:80px; width:320px; max-height:calc(100vh - 140px); overflow:auto; background:rgba(255,255,255,0.98); z-index:10002; border-radius:8px; box-shadow:0 10px 40px rgba(0,0,0,0.36); cursor:grab; }
+  #stageplot-app.sp-fullscreen .sp-sidepanel.floating.dragging { cursor:grabbing; opacity:0.99; }
+  #stageplot-app.sp-fullscreen .sp-sidepanel.floating.minimized { height:48px; overflow:visible; }
+  .sp-sidepanel .sp-float-hdr { display:flex; align-items:center; gap:8px; padding:8px 10px; border-bottom:1px solid rgba(0,0,0,0.06); background:linear-gradient(180deg, rgba(255,255,255,0.9), rgba(250,250,250,0.9)); cursor:grab; }
+  .sp-sidepanel .sp-float-hdr .sp-title { font-weight:700; flex:1; }
+  .sp-sidepanel .sp-float-hdr .sp-float-btn { border:0; background:transparent; padding:6px 8px; border-radius:6px; cursor:pointer; }
+  .sp-sidepanel .sp-float-btn:hover { background:rgba(0,0,0,0.04); }
   .sp-canvasWrap { min-height: var(--sp-canvas-min-height); }
   /* Cable tool cursor: tiny power-plug icon */
   .sp-cable-mode .sp-canvasWrap, .sp-cable-mode .sp-svg { cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'><rect x='6' y='1' width='4' height='6' fill='%23111'/><rect x='5' y='7' width='6' height='6' rx='1' fill='%23111'/><rect x='5.5' y='2' width='1' height='2' fill='%23fff'/><rect x='9.5' y='2' width='1' height='2' fill='%23fff'/></svg>") 8 8, crosshair; }
@@ -3391,6 +3401,91 @@
       try { root.classList.toggle('sp-full-lib-visible'); adjustFullscreenCanvas(); } catch (err) {}
     });
   }
+
+  // Fullscreen inspector toggle
+  if (els.fullInspectorToggle) {
+    els.fullInspectorToggle.addEventListener('click', () => {
+      try {
+        // toggle root class and apply floating class to sidepanel
+        root.classList.toggle('sp-full-inspector-visible');
+        const sp = document.querySelector('.sp-sidepanel');
+        if (sp) {
+          if (root.classList.contains('sp-full-inspector-visible')) sp.classList.add('floating');
+          else sp.classList.remove('floating');
+        }
+        adjustFullscreenCanvas();
+      } catch (err) {}
+    });
+  }
+
+  // Make the floating inspector draggable and add minimize control
+  (function initFloatingInspector(){
+    const sp = document.querySelector('.sp-sidepanel');
+    if (!sp) return;
+    // add floating header if not present
+    let hdr = sp.querySelector('.sp-float-hdr');
+    if (!hdr) {
+      hdr = document.createElement('div');
+      hdr.className = 'sp-float-hdr';
+      hdr.innerHTML = `<div class="sp-title">Inspector</div><button class="sp-float-btn" id="sp-inspectorMin">—</button>`;
+      sp.insertBefore(hdr, sp.firstChild);
+    }
+
+    const minBtn = hdr.querySelector('#sp-inspectorMin');
+    minBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      sp.classList.toggle('minimized');
+      try { localStorage.setItem('sp.inspector.minimized', sp.classList.contains('minimized') ? '1' : '0'); } catch (err) {}
+    });
+
+    let drag = { active:false, startX:0, startY:0, origLeft:0, origTop:0 };
+    function toNumber(px){ return Number(String(px||'').replace('px','')) || 0; }
+
+    hdr.addEventListener('pointerdown', (e) => {
+      if (!(root.classList && root.classList.contains('sp-fullscreen'))) return;
+      drag.active = true;
+      drag.startX = e.clientX; drag.startY = e.clientY;
+      sp.style.position = 'fixed';
+      sp.style.right = sp.style.right || '20px';
+      sp.style.top = sp.style.top || (sp.getBoundingClientRect().top + 'px');
+      drag.origLeft = toNumber(sp.style.left || (window.innerWidth - sp.getBoundingClientRect().right) + 'px');
+      drag.origTop = toNumber(sp.style.top);
+      sp.classList.add('dragging');
+      hdr.setPointerCapture && hdr.setPointerCapture(e.pointerId);
+    });
+
+    window.addEventListener('pointermove', (e) => {
+      if (!drag.active) return;
+      const dx = e.clientX - drag.startX;
+      const dy = e.clientY - drag.startY;
+      // compute new left from right/left ambiguity: convert right to left
+      const rect = sp.getBoundingClientRect();
+      let left = rect.left + dx;
+      let top = rect.top + dy;
+      // clamp
+      left = Math.max(8, Math.min(left, window.innerWidth - rect.width - 8));
+      top = Math.max(8, Math.min(top, window.innerHeight - rect.height - 8));
+      sp.style.left = left + 'px';
+      sp.style.top = top + 'px';
+      sp.style.right = 'auto';
+    });
+
+    window.addEventListener('pointerup', (e) => {
+      if (!drag.active) return;
+      drag.active = false;
+      try { hdr.releasePointerCapture && hdr.releasePointerCapture(e.pointerId); } catch (err) {}
+      sp.classList.remove('dragging');
+      try { localStorage.setItem('sp.inspector.pos', JSON.stringify({ left: sp.style.left, top: sp.style.top })); } catch (err) {}
+    });
+
+    // restore saved state
+    try {
+      const pos = JSON.parse(localStorage.getItem('sp.inspector.pos') || 'null');
+      if (pos && pos.left) { sp.style.left = pos.left; sp.style.top = pos.top; sp.style.right = 'auto'; }
+      const min = localStorage.getItem('sp.inspector.minimized');
+      if (min === '1') sp.classList.add('minimized');
+    } catch (err) {}
+  })();
 
   // Make the floating library draggable in fullscreen
   (function initFloatingLibraryDrag(){
