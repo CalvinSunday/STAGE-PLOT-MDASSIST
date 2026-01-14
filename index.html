@@ -954,16 +954,16 @@
     { type:"icon", id:"sub", name:"Sub", svg: subSvg() },
 
     // Instruments / people (these icons load external SVGs from icons/)
-    { type:"icon", id:"acoustic_guitar", name:"Acoustic Guitar", src: "icons/acoustic_guitar.svg", bw:90, bh:90 },
-    { type:"icon", id:"electric_guitar", name:"Electric Guitar", src: "icons/electric_guitar.svg", bw:90, bh:90 },
-    { type:"icon", id:"bass", name:"Bass Guitar", src: "icons/bass_guitar.svg", bw:90, bh:90 },
+    { type:"icon", id:"acoustic_guitar", name:"Acoustic Guitar", src: "icons/acousticguitar.svg", bw:90, bh:90 },
+    { type:"icon", id:"electric_guitar", name:"Electric Guitar", src: "icons/electricguitar.svg", bw:90, bh:90 },
+    { type:"icon", id:"bass", name:"Bass Guitar", src: "icons/bassguitar.svg", bw:90, bh:90 },
     { type:"icon", id:"violin", name:"Violin", svg: violinSvg() },
     { type:"icon", id:"guitar_boat", name:"Guitar Boat", svg: guitarBoatSvg(), defS: 2.6 },
     { type:"icon", id:"gtr_stand", name:"Guitar Stand", svg: gtrStandSvg() },
     { type:"icon", id:"kbd_stool", name:"Keyboard Stool", svg: stoolSvg() },
     { type:"icon", id:"kbd_stand", name:"Keyboard Stand", svg: kbdStandSvg() },
     { type:"icon", id:"keyboard", name:"Keyboard", src: "icons/keyboard.svg", bw:120, bh:40, defS: 2.6 },
-    { type:"icon", id:"grand_piano", name:"Grand Piano", src: "icons/grand_piano.svg", bw:160, bh:100, defS: 2.8 },
+    { type:"icon", id:"grand_piano", name:"Grand Piano", src: "icons/grandpiano.svg", bw:160, bh:100, defS: 2.8 },
     { type:"icon", id:"drum_pad", name:"Drum Pad", svg: drumPadSvg() },
     { type:"icon", id:"band_member", name:"Band Member (Unisex)", svg: bandMemberSvg() },
     { type:"icon", id:"singer", name:"Singer (Unisex)", svg: singerSvg() },
@@ -1053,8 +1053,9 @@
         thumb.style.display = "flex";
         thumb.style.alignItems = "center";
         thumb.style.justifyContent = "center";
-        thumb.style.width = (lib.bw || 64) + "px";
-        thumb.style.height = (lib.bh || 64) + "px";
+        // Keep consistent thumbnail box size so images fit and don't overlap labels
+        thumb.style.width = "64px";
+        thumb.style.height = "64px";
 
         if (lib.src) {
           const img = document.createElement("img");
