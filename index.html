@@ -1199,6 +1199,10 @@
       id,
       kind: "icon",
       iconId: libIcon.id,
+      src: libIcon.src,
+      svgGroup: libIcon.svgGroup,
+      bw: libIcon.bw,
+      bh: libIcon.bh,
       name: libIcon.name,
       x: stage.w / 2,
       y: stage.h / 2,
@@ -1332,6 +1336,8 @@
         id,
         kind: "icon",
         iconId: icon.id,
+        src: icon.src,
+        svgGroup: icon.svgGroup,
         name: icon.name,
         x: clampf(x, 0, stage.w), y: clampf(y, 0, stage.h),
         r: 0,
@@ -1633,7 +1639,10 @@
         img.setAttribute('width', String(bw));
         img.setAttribute('height', String(bh));
         img.setAttribute('preserveAspectRatio', 'xMidYMid meet');
-        img.setAttributeNS('http://www.w3.org/1999/xlink', 'href', it.src);
+        img.setAttribute('href', it.src);
+        try { img.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', it.src); } catch (err) {}
+        // Let the transparent hit-rect receive pointer events so items remain selectable
+        img.style.pointerEvents = 'none';
         wrap.appendChild(img);
         g2.appendChild(wrap);
         g.appendChild(g2);
