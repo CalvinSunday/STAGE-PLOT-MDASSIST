@@ -232,12 +232,15 @@
   .sp-canvasWrap { display:flex; flex-direction:column; }
   .sp-svg { background:#ffffff; border:1px solid #d1d5db; border-radius:10px; width:100%; height:100%; display:block; box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
 
-  /* Fullscreen mode: hide side UI and center the canvas, keep canvas aspect ratio tight */
-  #stageplot-app.sp-fullscreen .sp-library,
+  /* Fullscreen mode: hide side panel, keep library accessible as a floating panel, center the canvas and preserve aspect ratio */
   #stageplot-app.sp-fullscreen .sp-sidepanel { display:none !important; }
   #stageplot-app.sp-fullscreen .sp-toolbar { position:fixed; top:10px; left:10px; right:auto; z-index:9999; }
-  #stageplot-app.sp-fullscreen .sp-canvasWrap { padding:20px; background:#111827; display:flex; align-items:center; justify-content:center; }
-  #stageplot-app.sp-fullscreen .sp-svg { width:auto !important; height:auto !important; max-width:calc(100vw - 80px); max-height:calc(100vh - 120px); box-shadow: 0 6px 30px rgba(0,0,0,0.6); }
+  /* floating library so it's still reachable in fullscreen */
+  #stageplot-app.sp-fullscreen .sp-library { position:fixed; left:10px; top:60px; width:220px; max-height:calc(100vh - 100px); overflow:auto; background:rgba(255,255,255,0.96); z-index:9999; border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.28); }
+  /* darken but not pure black the surround; reserve space for floating library */
+  #stageplot-app.sp-fullscreen .sp-canvasWrap { padding:20px; background:#0f1724; display:flex; align-items:center; justify-content:center; min-height:100vh; }
+  /* SVG should scale to available space and respect aspect ratio; account for the floating library width */
+  #stageplot-app.sp-fullscreen .sp-svg { width:auto !important; height:auto !important; max-width:calc(100vw - 260px); max-height:calc(100vh - 120px); box-shadow: 0 6px 30px rgba(0,0,0,0.6); }
   .sp-canvasWrap { min-height: var(--sp-canvas-min-height); }
   /* Cable tool cursor: tiny power-plug icon */
   .sp-cable-mode .sp-canvasWrap, .sp-cable-mode .sp-svg { cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'><rect x='6' y='1' width='4' height='6' fill='%23111'/><rect x='5' y='7' width='6' height='6' rx='1' fill='%23111'/><rect x='5.5' y='2' width='1' height='2' fill='%23fff'/><rect x='9.5' y='2' width='1' height='2' fill='%23fff'/></svg>") 8 8, crosshair; }
