@@ -1047,10 +1047,43 @@
       .forEach(lib => {
         const card = document.createElement("div");
         card.className = "sp-card";
+
+        const thumb = document.createElement("div");
+        thumb.className = "sp-thumb";
+        thumb.style.display = "flex";
+        thumb.style.alignItems = "center";
+        thumb.style.justifyContent = "center";
+        thumb.style.width = (lib.bw || 64) + "px";
+        thumb.style.height = (lib.bh || 64) + "px";
+
+        if (lib.src) {
+          const img = document.createElement("img");
+          img.src = lib.src;
+          img.alt = lib.name || lib.id;
+          img.style.maxWidth = "100%";
+          img.style.maxHeight = "100%";
+          img.style.objectFit = "contain";
+          thumb.appendChild(img);
+        } else if (lib.svg) {
+          thumb.innerHTML = lib.svg;
+        } else if (lib.svgGroup) {
+          const svgWrap = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+          svgWrap.setAttribute('width', lib.bw || 64);
+          svgWrap.setAttribute('height', lib.bh || 64);
+          svgWrap.setAttribute('viewBox', `0 0 ${lib.svgBW || (lib.bw||64)} ${lib.svgBH || (lib.bh||64)}`);
+          svgWrap.appendChild(lib.svgGroup.cloneNode(true));
+          thumb.appendChild(svgWrap);
+        } else {
+          thumb.innerHTML = riserSvg();
+        }
+
         card.innerHTML = `
-          <div class="sp-thumb">${lib.svg}</div>
+          <div class="sp-thumb"></div>
           <div class="sp-name">${escapeHtml(lib.name)}</div>
         `;
+        // Replace placeholder thumb with constructed node
+        const placeholder = card.querySelector('.sp-thumb');
+        if (placeholder) placeholder.replaceWith(thumb);
         card.setAttribute("draggable", "true");
         card.addEventListener("dragstart", (e) => {
           e.dataTransfer.setData("application/x-stageplot-icon", lib.id);
@@ -1690,46 +1723,13 @@
     return g;
   }
 
-  function renderLibrary() {
-    const lib = els.libgrid || document.getElementById("sp-libgrid");
-    if (!lib) return;
-    lib.innerHTML = "";
-    LIB_ITEMS.forEach((it, i) => {
-      const el = document.createElement("div");
-      el.className = "sp-lib-item";
-      el.draggable = true;
-      el.dataset.idx = i;
-
-      const thumb = document.createElement("div");
-      thumb.className = "sp-lib-thumb";
-      if (it.src) {
-        const img = document.createElement("img");
-        img.src = it.src;
-        img.alt = it.label || it.id;
-        img.style.width = (it.bw || 40) + "px";
-        img.style.height = (it.bh || 40) + "px";
-        thumb.appendChild(img);
-      } else {
-        thumb.innerHTML = it.svg || riserSvg();
-      }
-      el.appendChild(thumb);
-
-      const label = document.createElement("div");
-      label.className = "sp-lib-label";
-      label.textContent = it.label || it.id;
-      el.appendChild(label);
-
-        lib.appendChild(el);
-      });
+  function getItemEl(id) {
+    try {
+      return els.items.querySelector(`[data-id="${cssEscape(id)}"]`);
+    } catch (_) {
+      return els.items.querySelector(`[data-id="${id.replace(/"/g, '\\"')}"]`);
     }
-
-    function getItemEl(id) {
-      try {
-        return els.items.querySelector(`[data-id="${cssEscape(id)}"]`);
-      } catch (_) {
-        return els.items.querySelector(`[data-id="${id.replace(/"/g, '\\"')}"]`);
-      }
-    }
+  }
 
   function getTransformedBBox(el) {
     try {
