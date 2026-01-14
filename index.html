@@ -2843,8 +2843,11 @@
       return;
     }
 
-    const isBlank = (e.target === els.svg || e.target.id === "sp-bg" || e.target.id === "sp-gridRect");
+    const t = e.target;
+    const hitItem = t && t.closest ? t.closest('[data-id]') : null;
+    const isBlank = (!hitItem) && (t === els.svg || t.id === "sp-bg" || t.id === "sp-gridRect" || t.id === "sp-items" || t.id === "sp-guides" || t.id === "sp-overlay" || t.id === "sp-selection");
     if (!isBlank) return;
+    e.preventDefault();
 
     // start drag-select
     dragSelect.active = true;
@@ -2881,6 +2884,7 @@
     if (list.some(it => it.locked)) return;
     for (const it of list) {
       if (it.kind === "cable") continue;
+      if (it.isRiser || it.iconId === "riser") continue;
       it.s = clampf((it.s || 1) * factor, 0.2, 8);
     }
     pushHistory("scale");
@@ -3862,8 +3866,16 @@
     if (key === "delete" || key === "backspace") { e.preventDefault(); deleteSelected(); return; }
 
     if (key === "r") { e.preventDefault(); rotateSelected(e.shiftKey ? -5 : 5); return; } // fixed: shift works
-    if (e.key === "+") { e.preventDefault(); scaleSelected(1.08); return; }
-    if (e.key === "-") { e.preventDefault(); scaleSelected(1/1.08); return; }
+    if (e.key === "+" || (e.key === "=" && e.shiftKey) || e.code === "NumpadAdd") {
+      e.preventDefault();
+      scaleSelected(1.08);
+      return;
+    }
+    if (e.key === "-" || e.code === "NumpadSubtract" || (e.key === "_" && e.shiftKey)) {
+      e.preventDefault();
+      scaleSelected(1/1.08);
+      return;
+    }
 
     if (e.key === "[") {
       e.preventDefault();
