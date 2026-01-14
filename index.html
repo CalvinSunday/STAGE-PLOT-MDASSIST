@@ -534,6 +534,68 @@
       <text x="35" y="66" text-anchor="middle" font-size="10" fill="rgba(0,0,0,0.60)">PB</text>
     </svg>`;
   }
+  function cdj2000Svg(){
+    return `<svg width="64" height="64" viewBox="0 0 70 70">
+      <rect x="10" y="10" width="50" height="50" rx="6" fill="rgba(0,0,0,0.86)"/>
+      <circle cx="35" cy="35" r="14" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.35)" stroke-width="2"/>
+      <circle cx="35" cy="35" r="3" fill="rgba(255,255,255,0.55)"/>
+      <rect x="16" y="16" width="12" height="6" rx="2" fill="rgba(255,255,255,0.18)"/>
+      <rect x="42" y="16" width="12" height="6" rx="2" fill="rgba(255,255,255,0.18)"/>
+      <rect x="16" y="50" width="38" height="6" rx="2" fill="rgba(255,255,255,0.18)"/>
+      <text x="35" y="66" text-anchor="middle" font-size="9" fill="rgba(0,0,0,0.60)">CDJ 2000</text>
+    </svg>`;
+  }
+  function cdj3000Svg(){
+    return `<svg width="64" height="64" viewBox="0 0 70 70">
+      <rect x="8" y="8" width="54" height="54" rx="8" fill="rgba(0,0,0,0.86)"/>
+      <circle cx="35" cy="35" r="16" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.35)" stroke-width="2"/>
+      <circle cx="35" cy="35" r="3" fill="rgba(255,255,255,0.55)"/>
+      <rect x="14" y="14" width="18" height="8" rx="2" fill="rgba(255,255,255,0.18)"/>
+      <rect x="38" y="14" width="18" height="8" rx="2" fill="rgba(255,255,255,0.18)"/>
+      <rect x="14" y="50" width="42" height="8" rx="2" fill="rgba(255,255,255,0.18)"/>
+      <text x="35" y="66" text-anchor="middle" font-size="9" fill="rgba(0,0,0,0.60)">CDJ 3000</text>
+    </svg>`;
+  }
+  function djmA9Svg(){
+    return `<svg width="64" height="64" viewBox="0 0 70 70">
+      <rect x="8" y="16" width="54" height="38" rx="6" fill="rgba(0,0,0,0.86)"/>
+      <rect x="12" y="20" width="46" height="10" rx="3" fill="rgba(255,255,255,0.16)"/>
+      <rect x="12" y="34" width="46" height="16" rx="3" fill="rgba(255,255,255,0.10)"/>
+      <circle cx="18" cy="42" r="2" fill="rgba(255,255,255,0.65)"/>
+      <circle cx="28" cy="42" r="2" fill="rgba(255,255,255,0.65)"/>
+      <circle cx="38" cy="42" r="2" fill="rgba(255,255,255,0.65)"/>
+      <circle cx="48" cy="42" r="2" fill="rgba(255,255,255,0.65)"/>
+      <text x="35" y="66" text-anchor="middle" font-size="9" fill="rgba(0,0,0,0.60)">DJM A9</text>
+    </svg>`;
+  }
+  function djm900Svg(){
+    return `<svg width="64" height="64" viewBox="0 0 70 70">
+      <rect x="8" y="16" width="54" height="38" rx="6" fill="rgba(0,0,0,0.86)"/>
+      <rect x="12" y="20" width="46" height="8" rx="3" fill="rgba(255,255,255,0.16)"/>
+      <rect x="12" y="32" width="46" height="18" rx="3" fill="rgba(255,255,255,0.10)"/>
+      <rect x="16" y="34" width="6" height="14" rx="2" fill="rgba(255,255,255,0.22)"/>
+      <rect x="26" y="34" width="6" height="14" rx="2" fill="rgba(255,255,255,0.22)"/>
+      <rect x="36" y="34" width="6" height="14" rx="2" fill="rgba(255,255,255,0.22)"/>
+      <rect x="46" y="34" width="6" height="14" rx="2" fill="rgba(255,255,255,0.22)"/>
+      <text x="35" y="66" text-anchor="middle" font-size="9" fill="rgba(0,0,0,0.60)">DJM 900</text>
+    </svg>`;
+  }
+  function networkSwitchSvg(){
+    return `<svg width="64" height="64" viewBox="0 0 70 70">
+      <rect x="10" y="24" width="50" height="22" rx="6" fill="rgba(0,0,0,0.82)"/>
+      <rect x="14" y="30" width="42" height="4" rx="2" fill="rgba(255,255,255,0.18)"/>
+      <g fill="rgba(255,255,255,0.75)">
+        <rect x="16" y="36" width="4" height="6" rx="1"/>
+        <rect x="22" y="36" width="4" height="6" rx="1"/>
+        <rect x="28" y="36" width="4" height="6" rx="1"/>
+        <rect x="34" y="36" width="4" height="6" rx="1"/>
+        <rect x="40" y="36" width="4" height="6" rx="1"/>
+        <rect x="46" y="36" width="4" height="6" rx="1"/>
+        <rect x="52" y="36" width="4" height="6" rx="1"/>
+      </g>
+      <text x="35" y="66" text-anchor="middle" font-size="9" fill="rgba(0,0,0,0.60)">Switch</text>
+    </svg>`;
+  }
   function laptopSvg(){
     return `<svg width="64" height="64" viewBox="0 0 70 70">
       <rect x="18" y="18" width="34" height="24" rx="4" fill="rgba(0,0,0,0.82)"/>
@@ -951,6 +1013,11 @@
 
     // Playback / utilities
     { type:"icon", id:"playback_rig", name:"Playback Rig", svg: playbackRigSvg() },
+    { type:"icon", id:"cdj_2000", name:"CDJ 2000", svg: cdj2000Svg() },
+    { type:"icon", id:"cdj_3000", name:"CDJ 3000", svg: cdj3000Svg() },
+    { type:"icon", id:"djm_a9", name:"DJM A9 Mixer", svg: djmA9Svg() },
+    { type:"icon", id:"djm_900", name:"DJM 900 Mixer", svg: djm900Svg() },
+    { type:"icon", id:"network_switch", name:"Network Switch", svg: networkSwitchSvg() },
     { type:"icon", id:"laptop", name:"Laptop", svg: laptopSvg() },
     { type:"icon", id:"chair", name:"Chair", svg: chairSvg() },
     { type:"icon", id:"power_120v", name:"120V", svg: power120Svg(), defVoltage: "120V", bw: 100, bh: 42 },
