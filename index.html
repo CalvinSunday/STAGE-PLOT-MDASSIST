@@ -2047,8 +2047,25 @@
 
         <div class="sp-field">
           <div class="sp-inline">
+          ${it.isRiser ? (() => {
+            const iconMeta = findLibById(it.iconId) || {};
+            const svgBW = iconMeta.svgBW || 70;
+            const svgBH = iconMeta.svgBH || 70;
+            const curW = round2(pxToUnits(it.w || svgBW));
+            const curH = round2(pxToUnits(it.h || svgBH));
+            const unitsLabel = (els.units && els.units.value === 'm') ? 'm' : 'ft';
+            return `
+              <div>Riser size (${unitsLabel})</div>
+              <div class="sp-inline">
+                <label>W <input id="sp-f-w" type="number" step="0.1" min="0.1" value="${curW}"/></label>
+                <label>H <input id="sp-f-h" type="number" step="0.1" min="0.1" value="${curH}"/></label>
+                <button id="sp-f-riser-preset" class="sp-btn sp-mini">Preset</button>
+              </div>
+            `;
+          })() : `
             <label>W <input id="sp-f-w" type="number" min="20" max="4000" step="10" value="${Math.round(it.w||200)}"/></label>
             <label>H <input id="sp-f-h" type="number" min="20" max="4000" step="10" value="${Math.round(it.h||200)}"/></label>
+          `}
           </div>
         </div>
 
@@ -2086,6 +2103,38 @@
         draw();
         debounceHistory("shape fill opacity");
       });
+
+      // Hook riser W/H inputs (units) if this shape is a riser
+      if (it.isRiser) {
+        const elW = document.getElementById('sp-f-w');
+        const elH = document.getElementById('sp-f-h');
+        if (elW) elW.addEventListener('input', (e) => {
+          const nw = clampf(parseFloat(e.target.value||'0.1'), 0.1, 9999);
+          it.w = clampf(unitsToPx(nw), 10, 4000);
+          draw(); debounceHistory('riser size');
+        });
+        if (elH) elH.addEventListener('input', (e) => {
+          const nh = clampf(parseFloat(e.target.value||'0.1'), 0.1, 9999);
+          it.h = clampf(unitsToPx(nh), 10, 4000);
+          draw(); debounceHistory('riser size');
+        });
+        const presetBtn = document.getElementById('sp-f-riser-preset');
+        if (presetBtn) presetBtn.addEventListener('click', () => {
+          const presets = [[8,4],[4,4],[8,6]];
+          const cur = [round2(pxToUnits(it.w||0)), round2(pxToUnits(it.h||0))];
+          let idx = presets.findIndex(p => p[0]===cur[0] && p[1]===cur[1]); idx = (idx+1) % presets.length;
+          const [pw, ph] = presets[idx];
+          if (elW) elW.value = pw; if (elH) elH.value = ph;
+          it.w = unitsToPx(pw); it.h = unitsToPx(ph);
+          draw(); debounceHistory('riser preset');
+        });
+      } else {
+        // non-riser shape W/H hooks
+        const elW = document.getElementById('sp-f-w');
+        const elH = document.getElementById('sp-f-h');
+        if (elW) elW.addEventListener('input', (e) => { it.w = clampf(parseFloat(e.target.value||'20'),20,4000); draw(); debounceHistory('shape width'); });
+        if (elH) elH.addEventListener('input', (e) => { it.h = clampf(parseFloat(e.target.value||'20'),20,4000); draw(); debounceHistory('shape height'); });
+      }
 
       document.getElementById("sp-f-w").addEventListener("input", (e) => { it.w = clampf(parseFloat(e.target.value||"200"), 20, 4000); draw(); debounceHistory("shape size"); });
       document.getElementById("sp-f-h").addEventListener("input", (e) => { it.h = clampf(parseFloat(e.target.value||"200"), 20, 4000); draw(); debounceHistory("shape size"); });
@@ -3229,10 +3278,34 @@
     if (sUp) sUp.addEventListener("click", () => nudgeScale(1.05));
     if (fDown) fDown.addEventListener("click", () => nudgeFont(-2));
     if (fUp) fUp.addEventListener("click", () => nudgeFont(+2));
-    if (wDown) wDown.addEventListener("click", () => nudgeWH(-10, 0));
-    if (wUp) wUp.addEventListener("click", () => nudgeWH(+10, 0));
-    if (hDown) hDown.addEventListener("click", () => nudgeWH(0, -10));
-    if (hUp) hUp.addEventListener("click", () => nudgeWH(0, +10));
+    if (wDown) wDown.addEventListener("click", () => {
+      const ids = getSelectedIds(); if (ids.length !== 1) return; const it = getItemById(ids[0]); if (!it || it.locked) return;
+      if (it.isRiser || it.iconId === 'riser') {
+        const cur = round2(pxToUnits(it.w || 0)); const nu = Math.max(0.1, cur - 1);
+        it.w = unitsToPx(nu); draw(); pushHistory('nudge riser size');
+      } else nudgeWH(-10, 0);
+    });
+    if (wUp) wUp.addEventListener("click", () => {
+      const ids = getSelectedIds(); if (ids.length !== 1) return; const it = getItemById(ids[0]); if (!it || it.locked) return;
+      if (it.isRiser || it.iconId === 'riser') {
+        const cur = round2(pxToUnits(it.w || 0)); const nu = cur + 1;
+        it.w = unitsToPx(nu); draw(); pushHistory('nudge riser size');
+      } else nudgeWH(+10, 0);
+    });
+    if (hDown) hDown.addEventListener("click", () => {
+      const ids = getSelectedIds(); if (ids.length !== 1) return; const it = getItemById(ids[0]); if (!it || it.locked) return;
+      if (it.isRiser || it.iconId === 'riser') {
+        const cur = round2(pxToUnits(it.h || 0)); const nu = Math.max(0.1, cur - 1);
+        it.h = unitsToPx(nu); draw(); pushHistory('nudge riser size');
+      } else nudgeWH(0, -10);
+    });
+    if (hUp) hUp.addEventListener("click", () => {
+      const ids = getSelectedIds(); if (ids.length !== 1) return; const it = getItemById(ids[0]); if (!it || it.locked) return;
+      if (it.isRiser || it.iconId === 'riser') {
+        const cur = round2(pxToUnits(it.h || 0)); const nu = cur + 1;
+        it.h = unitsToPx(nu); draw(); pushHistory('nudge riser size');
+      } else nudgeWH(0, +10);
+    });
   }
 
   if (els.units) {
@@ -3242,6 +3315,7 @@
       if (els.h) els.h.value = String(round2(pxToUnits(stage.h)));
       pushHistory("units");
       draw();
+      updateInspector();
     });
   }
 
