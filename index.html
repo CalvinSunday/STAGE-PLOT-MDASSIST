@@ -1588,24 +1588,12 @@
     const strokeAttr = `stroke="${escapeAttr(it.stroke || "#111111")}" stroke-width="${clampf(num(it.strokeWidth,4),1,30)}"`;
 
     if (it.isRiser) {
-      // Draw a precise rectangular riser and simple single-line legs
-      const rx = Math.min(8, it.w/10, it.h/6);
-      const rectEl = `<rect x="${-it.w/2}" y="${-it.h/2}" width="${it.w}" height="${it.h}" rx="${rx}" ${fillAttr} ${strokeAttr} />`;
-      // legs: place four single lines near each corner, offset inwards a bit
-      const legInsetX = Math.min(20, it.w*0.12);
-      const legInsetY = Math.min(20, it.h*0.12);
-      const legs = [`
-        <line x1="${-it.w/2 + legInsetX}" y1="${it.h/2}" x2="${-it.w/2 + legInsetX}" y2="${it.h/2 + 18}" stroke="${escapeAttr(it.stroke||'#111111')}" stroke-width="3" stroke-linecap="round"/>
-        <line x1="${it.w/2 - legInsetX}" y1="${it.h/2}" x2="${it.w/2 - legInsetX}" y2="${it.h/2 + 18}" stroke="${escapeAttr(it.stroke||'#111111')}" stroke-width="3" stroke-linecap="round"/>
-        <line x1="${-it.w/2 + legInsetX}" y1="${-it.h/2}" x2="${-it.w/2 + legInsetX}" y2="${-it.h/2 - 18}" stroke="${escapeAttr(it.stroke||'#111111')}" stroke-width="3" stroke-linecap="round"/>
-        <line x1="${it.w/2 - legInsetX}" y1="${-it.h/2}" x2="${it.w/2 - legInsetX}" y2="${-it.h/2 - 18}" stroke="${escapeAttr(it.stroke||'#111111')}" stroke-width="3" stroke-linecap="round"/>
-      `].join('\n');
-
+      // Draw a precise rectangular riser (no rounded corners, no legs)
+      const rectEl = `<rect x="${-it.w/2}" y="${-it.h/2}" width="${it.w}" height="${it.h}" rx="0" ${fillAttr} ${strokeAttr} />`;
       g.innerHTML = `
         <g transform="translate(${it.x} ${it.y}) rotate(${it.r}) scale(${it.s})">
           ${hit}
           ${rectEl}
-          ${legs}
         </g>
         ${renderLabel(it)}
       `;
