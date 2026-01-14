@@ -3376,7 +3376,12 @@
     });
     document.addEventListener('fullscreenchange', () => {
       updateFullBtn();
-      try { root.classList.toggle('sp-fullscreen', document.fullscreenElement === root); } catch (err) {}
+      try { 
+        const isRoot = document.fullscreenElement === root;
+        root.classList.toggle('sp-fullscreen', isRoot); 
+        // hide floating library by default when entering fullscreen to maximize canvas
+        if (isRoot) root.classList.remove('sp-full-lib-visible');
+      } catch (err) {}
       try { adjustFullscreenCanvas(); } catch (err) {}
     });
     updateFullBtn();
@@ -3410,6 +3415,19 @@
     if (drawH > availH) {
       drawH = availH;
       drawW = Math.round(drawH * stageRatio);
+    }
+    // Debug: log computed sizes to help diagnose cropping on different screens
+    try { console.debug('FS avail', availW, availH, 'stage', stage.w, stage.h, 'draw', drawW, drawH); } catch (err) {}
+    // Emergency fallback: if computed draw area is much smaller than available,
+    // force-fit to use available width (common on narrow viewports)
+    if (drawW < availW * 0.6 && drawH < availH * 0.6) {
+      drawW = availW;
+      drawH = Math.round(drawW / stageRatio);
+      if (drawH > availH) {
+        drawH = availH;
+        drawW = Math.round(drawH * stageRatio);
+      }
+      try { console.debug('FS fallback draw', drawW, drawH); } catch (err) {}
     }
     // Apply sizing and ensure CSS max constraints don't countermand us
     els.svg.style.width = drawW + 'px';
