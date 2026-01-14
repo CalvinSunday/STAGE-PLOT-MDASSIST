@@ -48,6 +48,7 @@
       <button id="sp-zoomOut" class="sp-btn" title="Zoom Out (stage)">− Zoom Out</button>
       <button id="sp-zoomIn" class="sp-btn" title="Zoom In (stage)">+ Zoom In</button>
       <button id="sp-fullscreenBtn" class="sp-btn">Fullscreen</button>
+      <button id="sp-fullLibToggle" class="sp-btn" style="display:none">Library</button>
 
       <span class="sp-sep"></span>
 
@@ -235,12 +236,16 @@
   /* Fullscreen mode: hide side panel, keep library accessible as a floating panel, center the canvas and preserve aspect ratio */
   #stageplot-app.sp-fullscreen .sp-sidepanel { display:none !important; }
   #stageplot-app.sp-fullscreen .sp-toolbar { position:fixed; top:10px; left:10px; right:auto; z-index:9999; }
-  /* floating library so it's still reachable in fullscreen */
-  #stageplot-app.sp-fullscreen .sp-library { position:fixed; left:10px; top:60px; width:220px; max-height:calc(100vh - 100px); overflow:auto; background:rgba(255,255,255,0.96); z-index:9999; border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.28); }
+  /* floating library: hidden by default in fullscreen, can be toggled visible */
+  #stageplot-app.sp-fullscreen .sp-library { display:none !important; position:fixed; left:10px; top:60px; width:220px; max-height:calc(100vh - 100px); overflow:auto; background:rgba(255,255,255,0.96); z-index:9999; border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.28); }
+  #stageplot-app.sp-fullscreen.sp-full-lib-visible .sp-library { display:block !important; }
+  /* show floating library toggle button in toolbar when fullscreen */
+  #sp-fullLibToggle { display:none; }
+  #stageplot-app.sp-fullscreen #sp-fullLibToggle { display:inline-block; }
   /* darken but not pure black the surround; reserve space for floating library */
   #stageplot-app.sp-fullscreen .sp-canvasWrap { padding:20px; background:#0f1724; display:flex; align-items:center; justify-content:center; min-height:100vh; }
-  /* SVG should scale to available space and respect aspect ratio; account for the floating library width */
-  #stageplot-app.sp-fullscreen .sp-svg { width:auto !important; height:auto !important; max-width:calc(100vw - 260px); max-height:calc(100vh - 120px); box-shadow: 0 6px 30px rgba(0,0,0,0.6); }
+  /* SVG should scale to available space and respect aspect ratio; JS will size it precisely */
+  #stageplot-app.sp-fullscreen .sp-svg { width:auto !important; height:auto !important; max-width:none !important; max-height:none !important; box-shadow: 0 6px 30px rgba(0,0,0,0.6); }
   .sp-canvasWrap { min-height: var(--sp-canvas-min-height); }
   /* Cable tool cursor: tiny power-plug icon */
   .sp-cable-mode .sp-canvasWrap, .sp-cable-mode .sp-svg { cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'><rect x='6' y='1' width='4' height='6' fill='%23111'/><rect x='5' y='7' width='6' height='6' rx='1' fill='%23111'/><rect x='5.5' y='2' width='1' height='2' fill='%23fff'/><rect x='9.5' y='2' width='1' height='2' fill='%23fff'/></svg>") 8 8, crosshair; }
@@ -350,6 +355,7 @@
     zoomIn: document.getElementById("sp-zoomIn"),
     zoomOut: document.getElementById("sp-zoomOut"),
     fullscreenBtn: document.getElementById("sp-fullscreenBtn"),
+    fullLibToggle: document.getElementById("sp-fullLibToggle"),
     units: document.getElementById("sp-units"),
     qaScaleDown: document.getElementById("sp-qaScaleDown"),
     qaScaleUp: document.getElementById("sp-qaScaleUp"),
@@ -1458,6 +1464,8 @@
   }
 
   function applyZoom() {
+    // If fullscreen, let fullscreen sizing handle the svg to preserve aspect
+    if (root.classList && root.classList.contains('sp-fullscreen')) { try { adjustFullscreenCanvas(); } catch (err) {} return; }
     // Adjust the displayed SVG element so it keeps the stage aspect ratio
     // and allows the page to grow vertically (page scroll). Zoom scales
     // both width and height of the rendered viewport.
@@ -3374,16 +3382,28 @@
     updateFullBtn();
   }
 
+  // Fullscreen library toggle
+  if (els.fullLibToggle) {
+    els.fullLibToggle.addEventListener('click', () => {
+      try { root.classList.toggle('sp-full-lib-visible'); adjustFullscreenCanvas(); } catch (err) {}
+    });
+  }
+
   // Adjust SVG size in fullscreen to best-fit the available viewport while preserving aspect ratio
   function adjustFullscreenCanvas() {
     if (!els.svg) return;
     const isFull = document.fullscreenElement === root || root.classList.contains('sp-fullscreen');
     if (!isFull) { applyZoom(); return; }
-    // Reserve space for floating library and toolbar; mirror CSS paddings
-    const reservedLeft = 240; // width of floating library + margin
-    const reservedTop = 120; // toolbar + vertical padding
-    const availW = Math.max(100, window.innerWidth - reservedLeft - 60);
-    const availH = Math.max(100, window.innerHeight - reservedTop - 60);
+    // Determine available space: account for floating library if visible
+    const lib = document.querySelector('.sp-library');
+    let reservedLeft = 40; // base padding
+    if (lib && getComputedStyle(lib).display !== 'none') {
+      reservedLeft = (lib.offsetWidth || 220) + 40;
+    }
+    const toolbar = document.querySelector('.sp-toolbar');
+    const reservedTop = (toolbar ? (toolbar.offsetHeight || 56) : 56) + 80;
+    const availW = Math.max(100, window.innerWidth - reservedLeft - 40);
+    const availH = Math.max(100, window.innerHeight - reservedTop - 40);
     const stageRatio = (stage.w || 1) / (stage.h || 1);
     let drawW = availW;
     let drawH = Math.round(drawW / stageRatio);
@@ -3391,6 +3411,7 @@
       drawH = availH;
       drawW = Math.round(drawH * stageRatio);
     }
+    // Apply sizing and ensure CSS max constraints don't countermand us
     els.svg.style.width = drawW + 'px';
     els.svg.style.height = drawH + 'px';
   }
