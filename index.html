@@ -3866,29 +3866,18 @@
     if (key === "delete" || key === "backspace") { e.preventDefault(); deleteSelected(); return; }
 
     if (key === "r") { e.preventDefault(); rotateSelected(e.shiftKey ? -5 : 5); return; } // fixed: shift works
-    if (e.key === "+" || (e.key === "=" && e.shiftKey) || e.code === "NumpadAdd") {
+    if (e.key === "+" || (e.key === "=" && e.shiftKey)) {
       e.preventDefault();
       scaleSelected(1.08);
       return;
     }
-    if (e.key === "-" || e.code === "NumpadSubtract" || (e.key === "_" && e.shiftKey)) {
+    if (e.key === "-") {
       e.preventDefault();
       scaleSelected(1/1.08);
       return;
     }
 
-    if (e.key === "[") {
-      e.preventDefault();
-      if (e.shiftKey) sendToBack();
-      else sendBackward();
-      return;
-    }
-    if (e.key === "]") {
-      e.preventDefault();
-      if (e.shiftKey) bringToFront();
-      else bringForward();
-      return;
-    }
+    // Bring forward/back hotkeys removed (use Layers panel)
 
     if (key === "l") { e.preventDefault(); toggleLockSelected(); return; }
     if (key === "d") { e.preventDefault(); duplicateSelected(); return; }
