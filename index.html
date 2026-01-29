@@ -405,6 +405,48 @@
     return s;
   }
 
+  function parseViewBox(viewBox) {
+    if (!viewBox) return null;
+    const parts = String(viewBox).trim().split(/[\s,]+/).map(Number);
+    if (parts.length !== 4 || parts.some(n => !Number.isFinite(n))) return null;
+    return { x: parts[0], y: parts[1], w: parts[2], h: parts[3] };
+  }
+
+  function extractSvgInner(svgText) {
+    try {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(String(svgText || ""), "image/svg+xml");
+      const svg = doc.querySelector("svg");
+      if (!svg) return null;
+      let vb = parseViewBox(svg.getAttribute("viewBox"));
+      if (!vb) {
+        const w = parseFloat(svg.getAttribute("width"));
+        const h = parseFloat(svg.getAttribute("height"));
+        if (Number.isFinite(w) && Number.isFinite(h)) vb = { x: 0, y: 0, w, h };
+      }
+      return { inner: svg.innerHTML || "", vb };
+    } catch (err) {
+      return null;
+    }
+  }
+
+  function buildExternalIconSvg(svgText) {
+    const parsed = extractSvgInner(svgText);
+    if (!parsed || !parsed.inner) return null;
+    const vb = parsed.vb || { x: 0, y: 0, w: 70, h: 70 };
+    const vbW = Math.max(1, vb.w || 70);
+    const vbH = Math.max(1, vb.h || 70);
+    const vbX = vb.x || 0;
+    const vbY = vb.y || 0;
+    const scale = 70 / Math.max(vbW, vbH);
+    const cx = vbX + vbW / 2;
+    const cy = vbY + vbH / 2;
+    const content = `<g transform="translate(35 35) scale(${scale}) translate(${-cx} ${-cy})">${parsed.inner}</g>`;
+    const thumbSvg = `<svg width="64" height="64" viewBox="0 0 70 70" xmlns="http://www.w3.org/2000/svg">${content}</svg>`;
+    const svgGroup = makeTintableSvgGroup(`<svg width="70" height="70" viewBox="0 0 70 70" xmlns="http://www.w3.org/2000/svg">${content}</svg>`);
+    return { thumbSvg, svgGroup };
+  }
+
   function hashToIndex(str, mod) {
     let h = 2166136261;
     for (let i = 0; i < str.length; i++) {
@@ -1094,7 +1136,34 @@
     return x;
   });
 
+  const EXTERNAL_ICON_SOURCES = {
+    acoustic_guitar: "icons/acousticguitar.svg",
+    electric_guitar: "icons/electricguitar.svg",
+    bass: "icons/bassguitar.svg",
+    grand_piano: "icons/grandpiano.svg",
+    keyboard: "icons/keyboard.svg",
+  };
+
   function findLibById(id){ return LIB_ITEMS.find(x => x.id === id) || null; }
+
+  async function loadExternalIconSvgs() {
+    const entries = Object.entries(EXTERNAL_ICON_SOURCES);
+    await Promise.all(entries.map(async ([id, url]) => {
+      try {
+        const res = await fetch(url, { cache: "no-cache" });
+        if (!res.ok) return;
+        const text = await res.text();
+        const built = buildExternalIconSvg(text);
+        if (!built) return;
+        const lib = findLibById(id);
+        if (!lib) return;
+        lib.svg = built.thumbSvg;
+        lib.svgGroup = built.svgGroup;
+      } catch (err) {
+        // ignore and keep fallback inline icon
+      }
+    }));
+  }
 
   // ============================================================
   // STATE
@@ -4029,6 +4098,10 @@
   }
 
   renderLibrary("");
+  loadExternalIconSvgs().then(() => {
+    renderLibrary(els.search ? els.search.value : "");
+    draw();
+  });
   pushHistory("init", true);
   draw();
   root.focus();
