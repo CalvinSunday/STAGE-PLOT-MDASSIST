@@ -1060,7 +1060,7 @@
     { type:"icon", id:"djm_900", name:"DJM 900 Mixer", svg: djm900Svg() },
     { type:"icon", id:"network_switch", name:"Network Switch", svg: networkSwitchSvg() },
     { type:"icon", id:"laptop", name:"Laptop", svg: laptopSvg() },
-    { type:"icon", id:"chair", name:"Chair", svg: chairSvg(), defWUnits: 1.5, defHUnits: 1.5 },
+    { type:"icon", id:"chair", name:"Chair", svg: chairSvg(), defWUnits: 2.0, defHUnits: 2.0 },
     { type:"icon", id:"power_120v", name:"120V", svg: power120Svg(), defVoltage: "120V", bw: 100, bh: 42 },
     { type:"icon", id:"power_drop", name:"Power Drop", svg: powerDropSvg() },
 
@@ -1096,10 +1096,10 @@
     { type:"icon", id:"sub", name:"Sub", svg: subSvg() },
 
     // Instruments / people
-    { type:"icon", id:"acoustic_guitar", name:"Acoustic Guitar", svg: acousticGtrSvg(), defWUnits: 1.4, defHUnits: 3.6 },
-    { type:"icon", id:"electric_guitar", name:"Electric Guitar", svg: electricGtrSvg(), defWUnits: 1.3, defHUnits: 3.4 },
-    { type:"icon", id:"bass", name:"Bass Guitar", svg: bassGtrSvg(), defWUnits: 1.4, defHUnits: 4.0 },
-    { type:"icon", id:"violin", name:"Violin", svg: violinSvg(), defWUnits: 0.7, defHUnits: 2.0 },
+    { type:"icon", id:"acoustic_guitar", name:"Acoustic Guitar", svg: acousticGtrSvg(), defWUnits: 1.8, defHUnits: 4.0 },
+    { type:"icon", id:"electric_guitar", name:"Electric Guitar", svg: electricGtrSvg(), defWUnits: 1.6, defHUnits: 3.6 },
+    { type:"icon", id:"bass", name:"Bass Guitar", svg: bassGtrSvg(), defWUnits: 1.7, defHUnits: 4.2 },
+    { type:"icon", id:"violin", name:"Violin", svg: violinSvg(), defWUnits: 1.0, defHUnits: 2.4 },
     { type:"icon", id:"guitar_boat", name:"Guitar Boat", svg: guitarBoatSvg(), defWUnits: 5.0, defHUnits: 2.5 },
     { type:"icon", id:"gtr_stand", name:"Guitar Stand", svg: gtrStandSvg() },
     { type:"icon", id:"kbd_stool", name:"Keyboard Stool", svg: stoolSvg() },
@@ -1128,7 +1128,7 @@
     { type:"icon", id:"amp", name:"Amp", svg: ampSvg() },
     { type:"icon", id:"drum", name:"Drum Kit", svg: drumSvg(), defWUnits: 6.5, defHUnits: 5.5 },
     { type:"icon", id:"pa", name:"PA", svg: paSvg() },
-    { type:"icon", id:"mic", name:"Mic", svg: micSvg(), defWUnits: 0.25, defHUnits: 0.7 },
+    { type:"icon", id:"mic", name:"Mic", svg: micSvg(), defWUnits: 0.35, defHUnits: 1.0 },
     { type:"icon", id:"sm58", name:"SM58", svg: sm58Svg() },
   ].map((x) => {
     if (x.type === "icon") {
@@ -2259,8 +2259,11 @@
               </div>
             `;
           })() : `
-            <label>W <input id="sp-f-w" type="number" min="20" max="4000" step="10" value="${Math.round(it.w||200)}"/></label>
-            <label>H <input id="sp-f-h" type="number" min="20" max="4000" step="10" value="${Math.round(it.h||200)}"/></label>
+            <div>${(els.units && els.units.value === 'm') ? 'Size (m)' : 'Size (ft)'}</div>
+            <div class="sp-inline">
+              <label>W <input id="sp-f-w" type="number" min="0.1" step="0.1" value="${round2(pxToUnits(it.w||200))}"/></label>
+              <label>H <input id="sp-f-h" type="number" min="0.1" step="0.1" value="${round2(pxToUnits(it.h||200))}"/></label>
+            </div>
           `}
           </div>
         </div>
@@ -2325,11 +2328,19 @@
           draw(); debounceHistory('riser preset');
         });
       } else {
-        // non-riser shape W/H hooks
+        // non-riser shape W/H hooks (units)
         const elW = document.getElementById('sp-f-w');
         const elH = document.getElementById('sp-f-h');
-        if (elW) elW.addEventListener('input', (e) => { it.w = clampf(parseFloat(e.target.value||'20'),20,4000); draw(); debounceHistory('shape width'); });
-        if (elH) elH.addEventListener('input', (e) => { it.h = clampf(parseFloat(e.target.value||'20'),20,4000); draw(); debounceHistory('shape height'); });
+        if (elW) elW.addEventListener('input', (e) => {
+          const nw = clampf(parseFloat(e.target.value||'0.1'), 0.1, 9999);
+          it.w = clampf(unitsToPx(nw), 10, 4000);
+          draw(); debounceHistory('shape width');
+        });
+        if (elH) elH.addEventListener('input', (e) => {
+          const nh = clampf(parseFloat(e.target.value||'0.1'), 0.1, 9999);
+          it.h = clampf(unitsToPx(nh), 10, 4000);
+          draw(); debounceHistory('shape height');
+        });
       }
       attachQuickAdjust();
       return;
@@ -3535,8 +3546,10 @@
     }
 
     if (it.kind === "shape") {
-      it.w = clampf((it.w || 120) + deltaW, 10, 4000);
-      it.h = clampf((it.h || 120) + deltaH, 10, 4000);
+      const curW = pxToUnits(it.w || 120);
+      const curH = pxToUnits(it.h || 120);
+      it.w = clampf(unitsToPx(curW + deltaW), 10, 4000);
+      it.h = clampf(unitsToPx(curH + deltaH), 10, 4000);
       it.bw = (it.w || 120) + 40;
       it.bh = (it.h || 120) + 40;
       draw();
@@ -3564,6 +3577,8 @@
       if (it.isRiser || it.iconId === 'riser') {
         const cur = round2(pxToUnits(it.w || 0)); const nu = Math.max(0.1, cur - 1);
         it.w = unitsToPx(nu); draw(); pushHistory('nudge riser size');
+      } else if (it.kind === 'shape') {
+        nudgeWH(-1, 0);
       } else nudgeWH(-10, 0);
     });
     if (wUp) wUp.addEventListener("click", () => {
@@ -3571,6 +3586,8 @@
       if (it.isRiser || it.iconId === 'riser') {
         const cur = round2(pxToUnits(it.w || 0)); const nu = cur + 1;
         it.w = unitsToPx(nu); draw(); pushHistory('nudge riser size');
+      } else if (it.kind === 'shape') {
+        nudgeWH(+1, 0);
       } else nudgeWH(+10, 0);
     });
     if (hDown) hDown.addEventListener("click", () => {
@@ -3578,6 +3595,8 @@
       if (it.isRiser || it.iconId === 'riser') {
         const cur = round2(pxToUnits(it.h || 0)); const nu = Math.max(0.1, cur - 1);
         it.h = unitsToPx(nu); draw(); pushHistory('nudge riser size');
+      } else if (it.kind === 'shape') {
+        nudgeWH(0, -1);
       } else nudgeWH(0, -10);
     });
     if (hUp) hUp.addEventListener("click", () => {
@@ -3585,6 +3604,8 @@
       if (it.isRiser || it.iconId === 'riser') {
         const cur = round2(pxToUnits(it.h || 0)); const nu = cur + 1;
         it.h = unitsToPx(nu); draw(); pushHistory('nudge riser size');
+      } else if (it.kind === 'shape') {
+        nudgeWH(0, +1);
       } else nudgeWH(0, +10);
     });
   }
