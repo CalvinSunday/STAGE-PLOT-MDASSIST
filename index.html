@@ -1049,8 +1049,8 @@
   const LIB_ITEMS = [
     // Quick-create tools
     { type:"text", id:"text_box", name:"Text Box", svg: textThumbSvg() },
-    { type:"shape", id:"shape_square", name:"Square", svg: squareThumbSvg(), shape:"rect", defW: 200, defH: 200 },
-    { type:"shape", id:"shape_circle", name:"Circle", svg: circleThumbSvg(), shape:"circle", defW: 200, defH: 200 },
+    { type:"shape", id:"shape_square", name:"Square", svg: squareThumbSvg(), shape:"rect", defW: 200, defH: 200, defWUnits: 4, defHUnits: 4 },
+    { type:"shape", id:"shape_circle", name:"Circle", svg: circleThumbSvg(), shape:"circle", defW: 200, defH: 200, defWUnits: 4, defHUnits: 4 },
 
     // Playback / utilities
     { type:"icon", id:"playback_rig", name:"Playback Rig", svg: playbackRigSvg() },
@@ -1060,7 +1060,7 @@
     { type:"icon", id:"djm_900", name:"DJM 900 Mixer", svg: djm900Svg() },
     { type:"icon", id:"network_switch", name:"Network Switch", svg: networkSwitchSvg() },
     { type:"icon", id:"laptop", name:"Laptop", svg: laptopSvg() },
-    { type:"icon", id:"chair", name:"Chair", svg: chairSvg() },
+    { type:"icon", id:"chair", name:"Chair", svg: chairSvg(), defWUnits: 1.5, defHUnits: 1.5 },
     { type:"icon", id:"power_120v", name:"120V", svg: power120Svg(), defVoltage: "120V", bw: 100, bh: 42 },
     { type:"icon", id:"power_drop", name:"Power Drop", svg: powerDropSvg() },
 
@@ -1083,7 +1083,7 @@
     // Stage furniture / platforms
     { type:"icon", id:"riser", name:"Riser", svg: riserSvg(), defWUnits: 8, defHUnits: 4, svgBW:60, svgBH:35 },
     { type:"icon", id:"rug", name:"Rug", svg: rugSvg() },
-    { type:"icon", id:"table", name:"Table", svg: tableSvg(), defWUnits: 6, defHUnits: 2.5, svgBW:42, svgBH:18 },
+    { type:"icon", id:"table", name:"Table", svg: tableSvg(), defWUnits: 6.5, defHUnits: 2.75, svgBW:42, svgBH:18 },
     { type:"icon", id:"side_table", name:"Side Table", svg: sideTableSvg(), defS: 1.8 },
     { type:"icon", id:"lamp_shade", name:"Lamp (Shade)", svg: lampShadeSvg() },
 
@@ -1096,16 +1096,16 @@
     { type:"icon", id:"sub", name:"Sub", svg: subSvg() },
 
     // Instruments / people
-    { type:"icon", id:"acoustic_guitar", name:"Acoustic Guitar", svg: acousticGtrSvg() },
-    { type:"icon", id:"electric_guitar", name:"Electric Guitar", svg: electricGtrSvg() },
-    { type:"icon", id:"bass", name:"Bass Guitar", svg: bassGtrSvg() },
+    { type:"icon", id:"acoustic_guitar", name:"Acoustic Guitar", svg: acousticGtrSvg(), defWUnits: 1.4, defHUnits: 3.6 },
+    { type:"icon", id:"electric_guitar", name:"Electric Guitar", svg: electricGtrSvg(), defWUnits: 1.3, defHUnits: 3.4 },
+    { type:"icon", id:"bass", name:"Bass Guitar", svg: bassGtrSvg(), defWUnits: 1.4, defHUnits: 4.0 },
     { type:"icon", id:"violin", name:"Violin", svg: violinSvg() },
-    { type:"icon", id:"guitar_boat", name:"Guitar Boat", svg: guitarBoatSvg(), defS: 2.6 },
+    { type:"icon", id:"guitar_boat", name:"Guitar Boat", svg: guitarBoatSvg(), defWUnits: 5.0, defHUnits: 2.5 },
     { type:"icon", id:"gtr_stand", name:"Guitar Stand", svg: gtrStandSvg() },
     { type:"icon", id:"kbd_stool", name:"Keyboard Stool", svg: stoolSvg() },
     { type:"icon", id:"kbd_stand", name:"Keyboard Stand", svg: kbdStandSvg() },
-    { type:"icon", id:"keyboard", name:"Keyboard", svg: keyboardSvg(), defS: 2.6 },
-    { type:"icon", id:"grand_piano", name:"Grand Piano", svg: grandPianoSvg(), defS: 2.8 },
+    { type:"icon", id:"keyboard", name:"Keyboard", svg: keyboardSvg(), defWUnits: 4.5, defHUnits: 1.5 },
+    { type:"icon", id:"grand_piano", name:"Grand Piano", svg: grandPianoSvg(), defWUnits: 6.5, defHUnits: 9.0 },
     { type:"icon", id:"drum_pad", name:"Drum Pad", svg: drumPadSvg() },
     { type:"icon", id:"band_member", name:"Band Member (Unisex)", svg: bandMemberSvg() },
     { type:"icon", id:"singer", name:"Singer (Unisex)", svg: singerSvg() },
@@ -1126,7 +1126,7 @@
     // Basics
     { type:"icon", id:"wedge", name:"Wedge", svg: wedgeSvg() },
     { type:"icon", id:"amp", name:"Amp", svg: ampSvg() },
-    { type:"icon", id:"drum", name:"Drum Kit", svg: drumSvg() },
+    { type:"icon", id:"drum", name:"Drum Kit", svg: drumSvg(), defWUnits: 6.5, defHUnits: 5.5 },
     { type:"icon", id:"pa", name:"PA", svg: paSvg() },
     { type:"icon", id:"mic", name:"Mic", svg: micSvg() },
     { type:"icon", id:"sm58", name:"SM58", svg: sm58Svg() },
@@ -1324,7 +1324,12 @@
 
   function addFromLibrary(lib) {
     if (lib.type === "text") { addTextItem(); return; }
-    if (lib.type === "shape") { addShapeItem(lib.shape, lib.name, lib.defW, lib.defH); return; }
+    if (lib.type === "shape") {
+      const w = (lib.defWUnits != null) ? unitsToPx(lib.defWUnits) : lib.defW;
+      const h = (lib.defHUnits != null) ? unitsToPx(lib.defHUnits) : lib.defH;
+      addShapeItem(lib.shape, lib.name, w, h);
+      return;
+    }
     if (lib.type === "icon") { addIconItem(lib); return; }
   }
 
